@@ -1,15 +1,6 @@
 import cv2
 
-# เลือกใช้วิธีใดวิธีหนึ่งด้านล่าง:
-
-# วิธีที่ 1: ใช้ Raw String (แนะนำ)
 rtsp_url = r"C:\Users\bovornpotpua\Desktop\example.mp4"
-
-# หรือ วิธีที่ 2: ใช้ Forward Slash
-# rtsp_url = "C:/Users/bovornpotpua/Desktop/example.mp4"
-
-# หรือ วิธีที่ 3: ใช้ Double Backslash
-# rtsp_url = "C:\\Users\\bovornpotpua\\Desktop\\example.mp4"
 
 
 cap = cv2.VideoCapture(rtsp_url)
