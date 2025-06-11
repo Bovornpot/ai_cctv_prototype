@@ -3,4 +3,5 @@ opencv-python
 fastapi
 uvicorn
 pandas
-numpy 
+numpy
+requests

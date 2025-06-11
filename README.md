@@ -81,7 +81,7 @@ ai_cctv_prototype/
     3.3) รันสคริปต์: ตรวจสอบให้แน่ใจว่าคุณอยู่ใน Python Virtual Environment ((venv) นำหน้า Command Prompt) แล้วรันคำสั่ง:
             python inference_runtime/camera_capture/rtsp_capture.py
 
-(start 09/06/2056 - finish 09/06/2025)
+(Phase1 -> start 09/06/2056 - finish 09/06/2025)
 
 Phase 2: การจำลอง AI Inference, Backend API
     1. การนิยามโครงสร้างข้อมูล (Output JSON Schema)
@@ -103,7 +103,7 @@ Phase 2: การจำลอง AI Inference, Backend API
             ฟังก์ชันสำหรับบันทึก (Insert) ผลลัพธ์ AI ใหม่
             ฟังก์ชันสำหรับดึง (Retrieve) ผลลัพธ์ AI ล่าสุด หรือกรองตาม ID กล้อง
 
-    4.FastAPI Application (Backend API)
+    4. FastAPI Application (Backend API)
         เราได้สร้างหัวใจหลักของระบบ Backend ด้วย FastAPI ในไฟล์ backend/app/main.py ซึ่งทำหน้าที่เป็นจุดรับและส่งข้อมูลหลักของระบบ
         - ไฟล์: backend/app/main.py
         - ความสามารถ:
@@ -118,6 +118,77 @@ Phase 2: การจำลอง AI Inference, Backend API
                 - ดึงข้อมูลผลลัพธ์ AI ล่าสุดจากฐานข้อมูล
                 - รองรับการกรองตาม camera_id และการจำกัดจำนวนผลลัพธ์ (limit)
             - Interactive API Documentation: FastAPI สร้างเอกสาร API (Swagger UI) ที่ http://127.0.0.1:8000/docs โดยอัตโนมัติ ทำให้คุณสามารถสำรวจและทดสอบ API ได้อย่างง่ายดาย
+    (10/06/2056)
+
+    5. Mock AI Inference Pipeline (การเชื่อมต่อและส่งข้อมูล)
+        เราได้พัฒนาสคริปต์ run_pipeline.py เพื่อจำลองการทำงานของ Edge Device ที่จะสร้างข้อมูล AI Inference และส่งไปยัง Backend API อย่างต่อเนื่อง
+        - ไฟล์: inference_runtime/run_pipeline.py
+        - ความสามารถ:
+            - เรียกใช้ mock_ai_inference.py เพื่อ สร้างข้อมูลจำลอง
+            - ใช้ไลบรารี requests เพื่อส่ง HTTP POST Request ที่มีข้อมูล JSON Payload ไปยัง POST /inference_results/ Endpoint ของ Backend API
+            - สามารถจำลองการทำงานของ กล้องหลายตัวพร้อมกัน โดยใช้ threading
+            - มีกลไกจัดการข้อผิดพลาดพื้นฐาน เช่น การเชื่อมต่อกับ Backend ไม่ได้
+        - สถานะปัจจุบัน: ณ ตอนนี้ Pipeline นี้สามารถทำงานได้และส่งข้อมูลจำลองไปยัง Backend API ซึ่งจะถูกจัดเก็บลงในฐานข้อมูล SQLite โดยอัตโนมัติ ทำให้ระบบ End-to-End (ในส่วนของ Backend และ Data Ingestion) ทำงานได้อย่างสมบูรณ์
+
+    How to Run and Test 
+        1. การ Set up
+            1.1 โคลน Project: หากยังไม่ได้ทำ ให้โคลน Repository นี้:
+                    git clone [Your Repository URL]
+                    cd ai_cctv_prototype
+
+            1.2 สร้างและ Activate Virtual Environment:
+                    python -m venv venv
+                    # บน Windows:
+                    venv\Scripts\activate
+                    # บน Linux/macOS:
+                    source venv/bin/activate
+
+            1.3 ติดตั้ง Dependencies: สร้างไฟล์ requirements.txt ในโฟลเดอร์ backend
+                    pip install -r backend/requirements.txt
+
+        2. รัน FastAPI Backend
+            เปิด Terminal หน้าต่างที่ 1 และทำตามขั้นตอน:
+            2.1 ตรวจสอบให้แน่ใจว่าคุณอยู่ใน Root ของโปรเจกต์ (ai_cctv_prototype) และ activate virtual environment แล้ว
+
+            2.2 เปลี่ยน Directory ไปที่โฟลเดอร์ backend:
+                    cd backend
+            
+            2.3 รัน FastAPI Server:
+                    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+                - คุณจะเห็นข้อความ INFO: Uvicorn running on http://0.0.0.0:8000 และ Database tables ensured and ready.
+                - ปล่อย Terminal นี้ทิ้งไว้ ให้ Server ทำงานอยู่เบื้องหลัง
+
+        3. รัน Mock Inference Pipeline
+            เปิด Terminal หน้าต่างที่ 2 (ใหม่) และทำตามขั้นตอน:
+            3.1 ตรวจสอบให้แน่ใจว่าคุณอยู่ใน Root ของโปรเจกต์ (ai_cctv_prototype) และ activate virtual environment แล้ว
+                - สำคัญ: ถ้าคุณได้เพิ่มโค้ด sys.path.append(...) ใน inference_runtime/run_pipeline.py ให้แน่ใจว่าบรรทัด PATH_TO_PROJECT_ROOT ถูกต้องตามที่แนะนำล่าสุด (os.path.join(os.path.dirname(__file__), ".."))
+            
+            3.2 รันสคริปต์ run_pipeline.py
+                    python inference_runtime/run_pipeline.py
+
+                -คุณจะเห็นข้อความแสดงว่า Pipeline กำลังเริ่มต้นและมีการส่งข้อมูลจากแต่ละ camera_id ไปยัง Backend API อย่างต่อเนื่อง
+
+        4. ตรวจสอบผลลัพธ์
+            ในขณะที่ทั้งสอง Terminal กำลังทำงานอยู่:
+            4.1 ตรวจสอบ FastAPI Backend Log (Terminal หน้าต่างที่ 1):
+                    - คุณควรเห็นข้อความ INFO: 127.0.0.1:xxxxx - "POST /inference_results/ HTTP/1.1" 201 Created ปรากฏขึ้นมาอย่างต่อเนื่อง ซึ่งยืนยันว่า FastAPI กำลังรับข้อมูล
+            4.2 ตรวจสอบข้อมูลในฐานข้อมูล (ผ่าน Swagger UI):
+                    - เปิดเว็บเบราว์เซอร์ของคุณ
+                    - ไปที่ URL: http://127.0.0.1:8000/docs
+                    - ใน Swagger UI ให้หา GET /inference_results/
+                    - คลิก "Try it out" และคลิก "Execute"
+                    - คุณจะเห็นข้อมูล AI Inference ที่ถูกส่งมาจาก run_pipeline.py และบันทึกลงในฐานข้อมูล ปรากฏเป็น JSON Array ใน Response Body ซึ่งมีการอัปเดตเรื่อยๆ
+                    
+(Phase2 -> start 10/06/2056 - finish 11/06/2025)
+
+                
+
+
+
+            
+
+
             
 
 
