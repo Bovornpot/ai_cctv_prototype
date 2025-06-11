@@ -84,6 +84,7 @@ ai_cctv_prototype/
 (Phase1 -> start 09/06/2056 - finish 09/06/2025)
 
 Phase 2: การจำลอง AI Inference, Backend API
+
     1. การนิยามโครงสร้างข้อมูล (Output JSON Schema)
         เราได้กำหนดรูปแบบมาตรฐานของข้อมูลผลลัพธ์จาก AI Inference โดยใช้ Pydantic Models ในไฟล์ backend/app/schemas.py ซึ่งทำหน้าที่เป็น "สัญญาข้อมูล" เพื่อให้แน่ใจว่าข้อมูลที่ถูกส่งและรับในระบบมีรูปแบบที่ถูกต้องและสอดคล้องกัน
         - ไฟล์: backend/app/schemas.py
@@ -179,7 +180,7 @@ Phase 2: การจำลอง AI Inference, Backend API
                     - ใน Swagger UI ให้หา GET /inference_results/
                     - คลิก "Try it out" และคลิก "Execute"
                     - คุณจะเห็นข้อมูล AI Inference ที่ถูกส่งมาจาก run_pipeline.py และบันทึกลงในฐานข้อมูล ปรากฏเป็น JSON Array ใน Response Body ซึ่งมีการอัปเดตเรื่อยๆ
-                    
+
 (Phase2 -> start 10/06/2056 - finish 11/06/2025)
 
                 
