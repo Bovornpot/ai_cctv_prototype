@@ -6,7 +6,7 @@ Phase1: AI CCTV Prototype - Initial Setup & Camera Capture
 
 1.Project Structure Overview
 
-''' ai_cctv_prototype/
+<!-- ai_cctv_prototype/
 ├── venv/                 # Python Virtual Environment (ไม่ควรถูกติดตามโดย Git)
 ├── .gitignore            # กำหนดไฟล์/โฟลเดอร์ที่ Git จะละเว้น
 ├── README.md             # เอกสารหลักของโปรเจกต์
@@ -38,7 +38,7 @@ Phase1: AI CCTV Prototype - Initial Setup & Camera Capture
 │
 └── data/                 # สำหรับไฟล์ข้อมูลที่ไม่ต้องการ Commit ใน Git (เช่น SQLite DB, logs)
     ├── db.sqlite         # ไฟล์ฐานข้อมูล SQLite
-    └── logs/             # ไฟล์บันทึกข้อมูล (logs) '''
+    └── logs/             # ไฟล์บันทึกข้อมูล (logs) -->
 
 2.Environment Setup
     2.1) Prerequisites
