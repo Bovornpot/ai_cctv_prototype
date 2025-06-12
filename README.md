@@ -7,38 +7,46 @@ Phase1: AI CCTV Prototype - Initial Setup & Camera Capture
 1.Project Structure Overview
 ```
 ai_cctv_prototype/
-├── venv/                 # Python Virtual Environment (ไม่ควรถูกติดตามโดย Git)
-├── .gitignore            # กำหนดไฟล์/โฟลเดอร์ที่ Git จะละเว้น
-├── README.md             # เอกสารหลักของโปรเจกต์
-├── docker-compose.yml    # (ในอนาคต) สำหรับจัดการ Dockerized Services
-├── docs/                 # เอกสารประกอบโปรเจกต์โดยรวม (เช่น สถาปัตยกรรม)
+├── venv/                   # สภาพแวดล้อมเสมือนของ Python (Python Virtual Environment)
+├── .gitignore              # ไฟล์กำหนดรายการที่ Git จะไม่ติดตาม (Git Ignore File)
+├── README.md               # เอกสารประกอบโปรเจกต์ (Project Documentation)
+├── docker-compose.yml      # (ในอนาคต) ไฟล์สำหรับจัดการและรัน Docker หลายคอนเทนเนอร์ (Docker Orchestration)
+├── docs/                   # เอกสารประกอบโปรเจกต์ทั่วไป (General Project Documentation)
 │
-├── backend/              # ส่วน Backend (FastAPI/Flask API) - โดย Edge/Full-Stack Engineer
-│   ├── app/              # โค้ดหลักของ Backend application
-│   └── database/         # การจัดการฐานข้อมูลและ models
+├── backend/                # ส่วนของ Backend API (FastAPI)
+│   ├── app/
+│   │   ├── __init__.py     # ไฟล์เริ่มต้นของ Python package
+│   │   ├── main.py         # แอปพลิเคชัน FastAPI หลัก
+│   │   ├── database.py     # การดำเนินการกับฐานข้อมูล SQLite
+│   │   └── schemas.py      # Pydantic data models สำหรับ API
+│   └── requirements.txt    # รายการแพ็คเกจ Python ที่จำเป็นสำหรับ Backend
 │
-├── frontend/             # ส่วน Frontend (React.js Dashboard) - โดย Edge/Full-Stack Engineer
-│   ├── public/           # ไฟล์สาธารณะ (เช่น index.html, favicon)
-│   ├── src/              # โค้ด source ของ React application
-│   ├── node_modules/     # ไลบรารี Node.js (ไม่ควรถูกติดตามโดย Git)
-│   ├── package.json      # รายการ dependencies สำหรับ Node.js
-│   └── package-lock.json # ล็อกเวอร์ชัน dependencies สำหรับ Node.js
+├── frontend/               # ส่วนของ Frontend Dashboard (React.js)
+│   ├── public/             # ทรัพยากรสถิตย์ (เช่น HTML, รูปภาพ)
+│   ├── src/                # ซอร์สโค้ด React
+│   ├── node_modules/       # แพ็คเกจ Node.js ที่ติดตั้ง
+│   ├── package.json        # ไฟล์ตั้งค่าโปรเจกต์ Node.js
+│   └── package-lock.json   # รายละเอียดเวอร์ชันของแพ็คเกจที่ติดตั้ง
 │
-├── inference_runtime/    # สคริปต์การจับภาพ, รัน Inference, ส่งข้อมูล - โดย Edge/Full-Stack Engineer (และใช้โมเดลจาก AI Engineer)
-│   ├── camera_capture/   # สคริปต์สำหรับดึงเฟรมจากกล้อง/วิดีโอ (เช่น RTSP, MP4)
-│   ├── inference_wrapper/# สคริปต์สำหรับการโหลดและรันโมเดล AI (mock/จริง)
-│   ├── configs/          # ไฟล์การตั้งค่าต่างๆ ที่เกี่ยวข้องกับ runtime
-│   └── models/           # โฟลเดอร์สำหรับวางไฟล์โมเดล AI (เช่น .pt, .onnx)
+├── inference_runtime/      # ส่วนสำหรับรัน AI Inference และจัดการ Data Ingestion Pipeline (จำลอง Edge Device)
+│   ├── camera_capture/     # สคริปต์สำหรับการจับภาพวิดีโอ/เฟรม
+│   │   └── rtsp_capture.py # ตัวอย่างสคริปต์สำหรับการจับภาพวิดีโอจาก RTSP
+│   ├── inference_wrapper/  # สคริปต์สำหรับโหลดและรัน AI model
+│   │   ├── __init__.py     # ไฟล์เริ่มต้นของ Python package
+│   │   └── mock_ai_inference.py # สคริปต์สำหรับสร้างข้อมูล Mock AI Inference
+│   ├── configs/            # ไฟล์การตั้งค่า (เช่น การตั้งค่ากล้อง)
+│   ├── models/             # (AI Engineer จะวางไฟล์ AI model ที่นี่)
+│   └── run_pipeline.py     # สคริปต์หลักสำหรับรัน mock inference pipeline
 │
-├── ai_development/       # สำหรับการพัฒนา, ฝึกฝน, ประเมินโมเดล AI - โดย AI/Computer Vision Engineer
-│   ├── datasets/         # ข้อมูลสำหรับฝึก/ทดสอบโมเดล AI
-│   ├── models/           # โมเดล AI ที่พัฒนาขึ้น (ก่อนนำไปใช้ใน runtime)
-│   ├── notebooks/        # Jupyter Notebooks สำหรับการทดลองและวิเคราะห์
-│   └── scripts/          # สคริปต์ช่วยในการพัฒนา AI (เช่น data preprocessing)
+├── ai_development/         # ส่วนสำหรับการพัฒนาและฝึกฝน AI Model
+│   ├── datasets/           # ชุดข้อมูลสำหรับฝึกฝน/ประเมินผล
+│   ├── models/             # AI model ที่ฝึกฝนแล้ว (เวอร์ชันสำหรับการพัฒนา)
+│   ├── notebooks/          # Jupyter notebooks สำหรับการทดลอง
+│   └── scripts/            # สคริปต์การฝึกฝน/ประเมินผล AI
 │
-└── data/                 # สำหรับไฟล์ข้อมูลที่ไม่ต้องการ Commit ใน Git (เช่น SQLite DB, logs)
-    ├── db.sqlite         # ไฟล์ฐานข้อมูล SQLite
-    └── logs/             # ไฟล์บันทึกข้อมูล (logs)
+└── data/                   # ข้อมูลที่ไม่ถูก Commit เข้า Git (เช่น SQLite DB, logs)
+    ├── db.sqlite           # ไฟล์ฐานข้อมูล SQLite (สร้างโดย Backend)
+    └── logs/               # ไฟล์ Log
 ```
 
 2.Environment Setup
