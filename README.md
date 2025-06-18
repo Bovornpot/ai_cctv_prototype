@@ -192,6 +192,8 @@ Phase 2: การจำลอง AI Inference, Backend API
 
 (Phase2 -> start 10/06/2056 - finish 11/06/2025)
 
+Phase 3: Frontend Dashboard
+
                 
 
 

@@ -1,6 +1,6 @@
 import cv2
 
-rtsp_url = r"C:\Users\bovornpotpua\Desktop\example.mp4"
+rtsp_url = r"rtsp://admin:P@ss001513@117.101.151.9:10082:554/cam/realmonitor?channel=1&subtype=0"
 
 
 cap = cv2.VideoCapture(rtsp_url)

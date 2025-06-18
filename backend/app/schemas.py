@@ -5,6 +5,7 @@ from typing import List, Optional, Dict
 class BoundingBox(BaseModel): 
     y_min: int
     x_max: int
+    y_min: int
     y_max: int
     confidence: Optional[float] = None
 
