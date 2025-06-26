@@ -1,92 +1,73 @@
-import sqlite3
-from typing import List, Dict, Any, Optional
-import json
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, Boolean, JSON
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime
 
-DATABASE_URL = "data/db.sqlite" #Path batabase data folder
+DATABASE_URL = "sqlite:///./data/db.sqlite" #Path batabase data folder
 
-def get_db_connection(): #connect and return object to the SQLite database
-    conn = sqlite3.connect(DATABASE_URL)
-    conn.row_factory = sqlite3.Row #เข้าถึงได้ด้วยชื่อคอลัมน์
-    return conn
+engine= create_engine(
+    DATABASE_URL, connect_args={"check_same_thread": False}
+)
+SessionLocal= sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
-def create_tables():
-    #Creates database tables if they don't exist
-    conn = get_db_connection()
-    cursor = conn.cursor() #ใช้run คำสั่ง SQL
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS inference_results (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT NOT NULL,
-        camera_id TEXT NOT NULL,
-        total_people INTEGER NOT NULL,
-        detections TEXT, -- Store JSON string of additional info
-        additional_info TEXT, -- store JSON string of additional info
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP              
-        );
-    """)
-    conn.commit()
-    conn.close()
-
-def insert_inference_result(data: Dict[str, Any]): 
-    #insert AI result data to inference_results tables
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    #convert dict to JSON strings for storage
-    detections_json = json.dumps(data.get("detections",[]))
-    additional_info_json = json.dumps(data.get("additional_info", {}))
-
-    cursor.execute("""
-        INSERT INTO inference_results (timestamp, camera_id, total_people, detections, additional_info)
-        VALUES (?, ?, ?, ?, ?);
-    """,(
-        data["timestamp"],
-        data["camera_id"],
-        data["total_people"],
-        detections_json,
-        additional_info_json
-    ))
-    conn.commit()
-    conn.close()
-
-def get_inference_results(camera_id: Optional[str] = None, limit: int = 100) -> List[Dict[str,Any]]:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    query = "SELECT * FROM inference_results"
-    params = []
+class DBParkingViolation(Base):
+    __tablename__= "parking_violations"
+    id= Column(Integer, primary_key=True, index=True)
+    timestamp= Column(DateTime, index=True, default=datetime.utcnow)
+    branch_id = Column(String, index=True)
+    camera_id= Column(String, index=True)
+    event_type = Column(String)
+    vehicle_id= Column(String, index=True)
+    # total_venchicle= Column(Integer, index=True)
+    # parking_slot_id= Column(String, index=True)
+    entry_time= Column(DateTime)
+    exit_time = Column(DateTime, nullable=True)
+    duration_minutes= Column(Float)
+    is_violation= Column(Boolean)
+    violation_reason= Column(String, nullable=True)
     
-    if camera_id:
-        query += " WHERE camera_id = ?"
-        params.append(camera_id)
-    query += " ORDER BY timestamp DESC LIMIT ?"
-    params.append(limit)
+class DBTableOccupancy(Base):
+    __tablename__= "table_occupancy"
+    id= Column(Integer, primary_key=True, index=True)
+    timestamp= Column(DateTime, index=True, default=datetime.utcnow)
+    branch_id = Column(String, index=True)
+    camera_id= Column(String, index=True)
+    event_type = Column(String)
+    table_id = Column(String, index=True)
+    # total_table= Column(Integer, index=True)
+    is_occupied= Column(Boolean)
+    occupancy_start_time= Column(DateTime, index=True)
+    occupancy_end_time= Column(DateTime, nullable=True)
+    duration_minutes= Column(Float, nullable=True)
+    current_occupant_count= Column(Integer, nullable=True)
 
-    cursor.execute(query, params) #run SQL
-    rows = cursor.fetchall() #ดึงข้อมูลที่ตรงกับ SQL
-    conn.close()
-
-    results = []
-    
-    for row in rows:
-        result_dict = dict(row) #convert sqlite3.row object to a standard dictionary
-
-        #convert JSON back to python objects เพื่อให้ข้อมูลพร้อมใช้สำหรับ Pydantic Schema
-        if 'detections' in result_dict and result_dict['detections']:
-            result_dict['detections'] = json.loads(result_dict['detections'])
-
-        if 'additional_info' in result_dict and result_dict['additional_info']:
-            result_dict['additional_info'] = json.loads(result_dict['additional_info'])
-        results.append(result_dict)
-
-    return results
-
-if __name__ == "__main__":
-    print("Creating database tables...")
-    create_tables()
-    print(f"Database created at {DATABASE_URL}")
-
-
+class DBChilledBasketAlert(Base):
+    __tablename__= "chilled_basket_alerts"
+    id= Column(Integer, primary_key=True, index=True)
+    timestamp= Column(DateTime, index=True, default=datetime.utcnow)
+    branch_id = Column(String, index=True)
+    camera_id= Column(String, index=True)
+    event_type = Column(String)
+    basket_id= Column(String, index=True)
+    zone_id= Column(String)
+    entry_time= Column(DateTime, index=True)
+    exit_time= Column(DateTime, nullable=True)
+    duration_minutes= Column(Float, nullable=True)
+    is_alert_triggered= Column(Boolean)
+    alert_reason= Column(String, nullable=True)
 
 
+# Function to create tables (call this once when the app starts)
+def create_db_tables():
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created/updated.")
 
-    
+# Dependency for FastAPI to get DB session
+def get_db():
+    db= SessionLocal()
+    try: 
+        yield db
+    finally:
+        db.close() 
+ 
