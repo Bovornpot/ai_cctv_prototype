@@ -69,7 +69,6 @@ const Header: React.FC<HeaderProps> = ({ currentDate, activeTab, onDateChange, o
       <div className="header-left-section">
         <img src="/ai-cctv-logo.svg" alt="AI CCTV Logo" className="header-logo" />
         <span className="header-app-name">AI CCTV</span>
-        {/* Dynamic Page Title (h1) has been moved to MainLayout.tsx */}
       </div>
 
       {/* Right Section: Combined Time, Date Filters, Branch Input, Search Button */}
@@ -218,7 +217,7 @@ const Header: React.FC<HeaderProps> = ({ currentDate, activeTab, onDateChange, o
                     }}
                     className="flex-1 px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
                   >
-                    ตอนนี้
+                    วันนี้
                   </button>
                   <button
                     onClick={(e) => {

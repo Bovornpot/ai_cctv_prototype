@@ -26,17 +26,12 @@ export const getWeekRangeForDate = (date: Date) => {
 };
 
 // Helper function to get week range for display (Monday to Sunday)
-// (This is a simplified version for display, used in formatDateDisplay)
 const getWeekRangeForDisplay = (date: Date) => {
     const week = getWeekNumber(date);
     const year = date.getFullYear();
 
-    // Get the first day of the year
     const firstDayOfYear = new Date(year, 0, 1);
-
-    // Calculate the number of days offset for the start of the target week
-    // This assumes ISO week starts on Monday, and week 1 has Jan 4th
-    const firstDayOfYearDay = firstDayOfYear.getDay() || 7; // 1-7 for Mon-Sun
+    const firstDayOfYearDay = firstDayOfYear.getDay() || 7;
     const dayOffsetForFirstMonday = (firstDayOfYearDay <= 4) ? (1 - firstDayOfYearDay) : (8 - firstDayOfYearDay);
     const firstMondayOfYear = new Date(year, 0, 1 + dayOffsetForFirstMonday);
 
@@ -54,12 +49,11 @@ export const formatDateDisplay = (date: Date, activeTab: string): string => {
 
   if (activeTab === 'Day') {
     const isToday = date.toDateString() === now.toDateString();
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}${isToday ? ' (วันนี้)' : ''}`;
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}${isToday ? ' (Today)' : ''}`;
   } else if (activeTab === 'Week') {
     const { monday, sunday } = getWeekRangeForDisplay(date);
-    // แก้ไขตรงนี้: เข้าถึง .start แทน .monday
-    const { start: currentWeekStart } = getWeekRangeForDate(now); // Get current week's Monday (start of week)
-    const isThisWeek = monday.toDateString() === currentWeekStart.toDateString(); // Compare Mondays
+    const { start: currentWeekStart } = getWeekRangeForDate(now);
+    const isThisWeek = monday.toDateString() === currentWeekStart.toDateString();
     return `สัปดาห์ที่ ${getWeekNumber(date)}, ${date.getFullYear()} (${monday.getDate()} ${thaiMonths[monday.getMonth()]} - ${sunday.getDate()} ${thaiMonths[sunday.getMonth()]})${isThisWeek ? ' (สัปดาห์นี้)' : ''}`;
   } else { // Month
     const isThisMonth = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
@@ -69,24 +63,22 @@ export const formatDateDisplay = (date: Date, activeTab: string): string => {
 
 // Get the end date for "Data updated until" message
 export const getUpdateEndDate = (date: Date, activeTab: string): string => {
-    const options: Intl.DateTimeFormatOptions = {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-    };
+    const now = new Date(); // Get current time for the update timestamp
+    const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    let displayDate: Date;
 
     if (activeTab === 'Day') {
-        return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+        displayDate = date;
     } else if (activeTab === 'Week') {
         const { sunday } = getWeekRangeForDisplay(date);
-        return sunday.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+        displayDate = sunday;
     } else { // Month
-        const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-        return lastDayOfMonth.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+        displayDate = new Date(date.getFullYear(), date.getMonth() + 1, 0); // Last day of the month
     }
+
+    const formattedDate = displayDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+    return `${formattedDate} เวลา ${timeString} น.`; // Include time
 };
 
 // Function to generate calendar data for date picker
