@@ -12,7 +12,7 @@ class BaseAnalyticsEvents(BaseModel):
 class ParkingViolationData(BaseAnalyticsEvents):
     event_type: Literal["parking_violation"] = "parking_violation"
     vehicle_id: str = Field(...,examples="ABC-1234")
-    # total_vechicle: int = Field(...,examples=5)
+    total_vehicle: int = Field(...,examples=5)
     # parking_slot_id: str = Field(...,example="P01")
     entry_time: datetime= Field(...,examples="2024-07-01T10:00:00Z")
     exit_time: Optional[datetime]= Field(None,examples="2024-07-01T10:00:00Z")

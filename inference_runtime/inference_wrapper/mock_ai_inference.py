@@ -26,6 +26,7 @@ def generate_mock_ai_results(branch_id: str, camera_id: str): #จำลอง�
             moment_time_minutes = random.randint(5,120)
             entry= current_time - timedelta(minutes=moment_time_minutes)
             duration= round((current_time - entry).total_seconds() /60,2)
+            total_vehicle=random.randint(1,10)
             is_violation= False
             violation_reason="within_time"
             exit_time= current_time
@@ -42,6 +43,7 @@ def generate_mock_ai_results(branch_id: str, camera_id: str): #จำลอง�
                 camera_id=camera_id,
                 event_type="parking_violation",
                 vehicle_id=f"CAR_{random.randint(100,999)}",
+                total_vehicle=total_vehicle,
                 entry_time=entry,
                 exit_time=exit_time,
                 duration_minutes=duration,

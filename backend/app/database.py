@@ -19,7 +19,7 @@ class DBParkingViolation(Base):
     camera_id= Column(String, index=True)
     event_type = Column(String)
     vehicle_id= Column(String, index=True)
-    # total_venchicle= Column(Integer, index=True)
+    total_vehicle= Column(Integer, index=True)
     # parking_slot_id= Column(String, index=True)
     entry_time= Column(DateTime)
     exit_time = Column(DateTime, nullable=True)

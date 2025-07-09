@@ -21,12 +21,69 @@ ai_cctv_prototype/
 │   │   └── schemas.py      # Pydantic data models สำหรับ API
 │   └── requirements.txt    # รายการแพ็คเกจ Python ที่จำเป็นสำหรับ Backend
 │
-├── frontend/               # ส่วนของ Frontend Dashboard (React.js)
-│   ├── public/             # ทรัพยากรสถิตย์ (เช่น HTML, รูปภาพ)
-│   ├── src/                # ซอร์สโค้ด React
-│   ├── node_modules/       # แพ็คเกจ Node.js ที่ติดตั้ง
-│   ├── package.json        # ไฟล์ตั้งค่าโปรเจกต์ Node.js
-│   └── package-lock.json   # รายละเอียดเวอร์ชันของแพ็คเกจที่ติดตั้ง
+├──frontend/
+│    ├── public/                 # โฟลเดอร์สำหรับทรัพยากรสถิตย์ (Static Assets) ที่จะถูกเสิร์ฟโดยตรง
+│    │   ├── index.html          # ไฟล์ HTML หลักที่ React Application ของคุณจะถูก Render เข้าไป
+│    │   ├── favicon.ico         # ไอคอน Favicon ของเว็บที่แสดงบนแท็บเบราว์เซอร์
+│    │   └── ai-cctv-logo.svg    # โลโก้สำหรับ Header ของแอปพลิเคชัน
+│
+│    ├── src/                    # โฟลเดอร์หลักสำหรับ Source Code ของ React Application
+│    │   ├── api/                # สำหรับ Logic ในการเรียกใช้ Backend API หรือ Mock Data
+│    │   │   └── analytics.ts    # ไฟล์ที่รวมฟังก์ชันสำหรับดึงข้อมูล Dashboard (ปัจจุบันใช้ Mock Data)
+│    │   │
+│    │   ├── assets/             # (Optional) โฟลเดอร์สำหรับเก็บรูปภาพ, ไอคอน, ฟอนต์ หรือไฟล์ Media อื่นๆ ที่ใช้ใน UI
+│    │   │   └── icons/          # ตัวอย่างโฟลเดอร์สำหรับไอคอน (ปัจจุบันใช้ Lucide React เป็นหลัก)
+│    │   │       └── sidebar/
+│    │   │
+│    │   ├── components/         # โฟลเดอร์สำหรับ UI Components ที่นำมาใช้ซ้ำได้ (Reusable Components)
+│    │   │   ├── common/         # Components ทั่วไปที่ใช้ได้หลายที่ เช่น ปุ่ม, การ์ดพื้นฐาน
+│    │   │   │   ├── StatCard.tsx     # การ์ดแสดงตัวเลขสถิติ (ปรับขนาด font และ padding ให้เล็กลง)
+│    │   │   │   ├── AlertCard.tsx    # การ์ดแสดงข้อมูล Alert (สาขาที่มี Alerts สูงสุด) (ปรับการจัดวางและขนาด font)
+│    │   │   │   └── SectionCard.tsx  # การ์ดสำหรับ Section ต่างๆ ใน Dashboard (มี Title และ Status)
+│    │   │   │
+│    │   │   ├── layout/         # Components ที่ใช้ในการจัดวางโครงสร้าง Layout ของหน้าจอหลัก
+│    │   │   │   ├── Header.tsx     # ส่วนหัวของ Dashboard (โลโก้, ชื่อแอป, Date/Branch/Search Controls)
+│    │   │   │   ├── Header.css     # CSS สำหรับ Header (ปรับความสูงและจัดวางองค์ประกอบ)
+│    │   │   │   ├── MainLayout.tsx # Component หลักที่รวม Header, Sidebar และ Content Area (แสดง Dynamic Title)
+│    │   │   │   ├── MainLayout.css # CSS สำหรับ MainLayout (ปรับ margin-top และ padding ของ content)
+│    │   │   │   ├── Sidebar.tsx    # แถบนำทางด้านซ้ายมือ (เมนูหลักและโปรไฟล์ผู้ใช้)
+│    │   │   │   └── Sidebar.css    # CSS สำหรับ Sidebar
+│    │   │   │
+│    │   │   └── widgets/        # โฟลเดอร์สำหรับ Component ของแต่ละ Widget บน Dashboard
+│    │   │       ├── OverallSystemPerformanceWidget.tsx # Widget แสดงภาพรวมระบบและประสิทธิภาพ (มีกราฟ Line Chart)
+│    │   │       ├── TopBranchesByAlertsWidget.tsx      # Widget แสดงสาขาที่มี Alerts สูงสุด (ใช้ AlertCard)
+│    │   │       ├── ParkingViolationWidget.tsx         # Widget แสดงข้อมูลการละเมิดจอดรถ (มี StatCard, รายการ, Line Chart)
+│    │   │       ├── TableOccupancyWidget.tsx           # Widget แสดงข้อมูลการใช้โต๊ะ (มี StatCard, ข้อความ, Bar Chart)
+│    │   │       └── ChilledBasketAlertWidget.tsx       # Widget แสดงข้อมูลแจ้งเตือนตะกร้าแช่เย็น (มี StatCard, รายการ, Bar Chart)
+│    │   │
+│    │   ├── contexts/           # (ถ้าจำเป็น) สำหรับ React Context API เพื่อจัดการ Global State ที่ซับซ้อน
+│    │   │
+│    │   ├── hooks/              # สำหรับ Custom React Hooks ที่นำมาใช้ซ้ำได้ (เช่น useFetchData)
+│    │   │
+│    │   ├── pages/              # สำหรับ Component ของหน้าจอหลักแต่ละหน้า
+│    │   │   └── DashboardOverviewPage.tsx # หน้าจอ Dashboard Overview หลัก (จัดวาง Widgets ด้วย Grid, ลด gap)
+│    │   │   # ├── ParkingViolationDetailsPage.tsx # (ในอนาคต) หน้ารายละเอียด Parking Violation
+│    │   │   # └── ... (หน้าอื่นๆ ที่ Sidebar Link ไปถึง)
+│    │   │
+│    │   ├── styles/             # (Optional) ไฟล์ CSS/SCSS ทั่วไป, Global Styles, หรือ Themes (นอกเหนือจาก index.css)
+│    │   │
+│    │   ├── utils/              # ฟังก์ชัน Helper ต่างๆ ที่ใช้ทั่วโปรเจกต์
+│    │   │   └── dateUtils.ts    # ฟังก์ชันช่วยในการจัดการและจัดรูปแบบวันที่/เวลา (เพิ่ม Logic 'สัปดาห์นี้'/'เดือนนี้')
+│    │   │
+│    │   ├── App.tsx             # Component หลักของแอปพลิเคชัน ทำหน้าที่จัดการ Routing (React Router DOM) และ State หลัก (Date, Tab)
+│    │   ├── index.tsx           # จุดเริ่มต้นของการ Render React App เข้าไปใน index.html (ไม่ค่อยมีการแก้ไข)
+│    │   ├── index.css           # Global CSS ที่ Import Tailwind CSS directives และ Global Styles อื่นๆ
+│    │   └── react-app-env.d.ts  # TypeScript environment definitions สำหรับ Create React App
+│    │
+│    ├── node_modules/           # โฟลเดอร์ที่เก็บ Node.js Packages (Dependencies) ทั้งหมดที่ติดตั้งไว้
+│    ├── .env                    # ไฟล์สำหรับเก็บ Environment Variables (เช่น URL ของ Backend API)
+│    ├── .gitignore              # ไฟล์กำหนดรายการที่ Git จะไม่ติดตาม (เช่น node_modules, .env)
+│    ├── package.json            # ไฟล์ตั้งค่าโปรเจกต์ Node.js, กำหนด Dependencies และ Scripts คำสั่ง (npm start, build)
+│    ├── package-lock.json       # ไฟล์ที่ล็อกเวอร์ชันของแพ็คเกจที่ติดตั้งไว้ เพื่อให้มั่นใจว่าทุกคนใช้เวอร์ชันเดียวกัน
+│    ├── tsconfig.json           # ไฟล์ตั้งค่า TypeScript Compiler
+│    ├── tailwind.config.js      # ไฟล์ตั้งค่าสำหรับ Tailwind CSS (กำหนด Path ของไฟล์ที่จะ Scan หา Tailwind Classes)
+│    ├── postcss.config.js       # ไฟล์ตั้งค่าสำหรับ PostCSS (กำหนด Plugins เช่น Tailwind CSS และ Autoprefixer)
+│    └── README.md               # เอกสารประกอบโปรเจกต์ Frontend, วิธี Setup และ Run
 │
 ├── inference_runtime/      # ส่วนสำหรับรัน AI Inference และจัดการ Data Ingestion Pipeline (จำลอง Edge Device)
 │   ├── camera_capture/     # สคริปต์สำหรับการจับภาพวิดีโอ/เฟรม
