@@ -1,0 +1,64 @@
+/* frontend/src/components/parking/ViolationsTable.css */
+
+.table-container {
+  overflow-x: auto;
+}
+
+.violations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.violations-table th,
+.violations-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.violations-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.violations-table tbody tr:hover {
+  background-color: #f1f3f5;
+}
+
+.font-mono {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.text-gray-500 {
+    color: #6c757d;
+}
+
+.action-button {
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+.action-button:hover {
+  background-color: #e9ecef;
+}
+
+/* --- Status Badge Styles --- */
+.status-badge-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-dot.status-ongoing { background-color: #dc3545; } /* Red */
+.status-dot.status-completed { background-color: #28a745; } /* Green */
+.status-dot.status-acknowledged { background-color: #6c757d; } /* Gray */

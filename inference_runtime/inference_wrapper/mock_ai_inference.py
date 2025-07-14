@@ -48,7 +48,7 @@ def generate_mock_ai_results(branch_id: str, camera_id: str): #จำลอง�
                 exit_time=exit_time,
                 duration_minutes=duration,
                 is_violation=is_violation,
-                violation_reason=violation_reason
+                # violation_reason=violation_reason
             )
 
         #Mock Table Occupancy Data

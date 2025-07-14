@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import DashboardOverviewPage from './pages/DashboardOverviewPage';
+import ParkingViolationDetailsPage from './pages/ParkingViolationDetailsPage';
 import './index.css';
 
 function App() {
@@ -41,7 +42,12 @@ function App() {
               />
             }
           />
-          <Route path="/parking-violations" element={<div className="p-6"><h2>Parking Violation Page</h2><p>Details will go here.</p></div>} />
+          {/* <Route path="/parking-violations" element={<div className="p-6"><h2>Parking Violation Page</h2><p>Details will go here.</p></div>} /> */}
+          <Route
+            path="/parking-violations"
+            element={<ParkingViolationDetailsPage />} // <-- แก้จาก div เป็น Component ของเรา
+          />
+
           <Route path="/table-occupancy" element={<div className="p-6"><h2>Table Occupancy Page</h2><p>Details will go here.</p></div>} />
           <Route path="/chilled-basket-alerts" element={<div className="p-6"><h2>Chilled Basket Alert Page</h2><p>Details will go here.</p></div>} />
           <Route path="/ai-settings" element={<div className="p-6"><h2>AI Setting Page</h2><p>Details will go here.</p></div>} />

@@ -18,7 +18,7 @@ class ParkingViolationData(BaseAnalyticsEvents):
     exit_time: Optional[datetime]= Field(None,examples="2024-07-01T10:00:00Z")
     duration_minutes: float= Field(...,examples=20.5)
     is_violation: bool= Field(...,examples=True)
-    violation_reason: Optional[str] = Field(None, example="parked_over_limit")
+    # violation_reason: Optional[str] = Field(None, example="parked_over_limit")
 class TableOccupancyData(BaseAnalyticsEvents):
     event_type: Literal["table_occupancy"] = "table_occupancy"
     table_id: str = Field(...,examples="T03")

@@ -25,7 +25,7 @@ class DBParkingViolation(Base):
     exit_time = Column(DateTime, nullable=True)
     duration_minutes= Column(Float)
     is_violation= Column(Boolean)
-    violation_reason= Column(String, nullable=True)
+    # violation_reason= Column(String, nullable=True)
     
 class DBTableOccupancy(Base):
     __tablename__= "table_occupancy"

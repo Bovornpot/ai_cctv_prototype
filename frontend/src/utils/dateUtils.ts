@@ -119,3 +119,24 @@ export const generateCalendarData = (currentDate: Date) => {
 
     return calendar;
 };
+
+export const formatDateRangeDisplay = (range: { start: Date, end: Date }): string => {
+  const startDay = range.start.getDate();
+  const startMonth = range.start.toLocaleString('th-TH', { month: 'short' });
+  const startYear = range.start.getFullYear();
+
+  const endDay = range.end.getDate();
+  const endMonth = range.end.toLocaleString('th-TH', { month: 'short' });
+  const endYear = range.end.getFullYear();
+
+  if (range.start.toDateString() === range.end.toDateString()) {
+    return `${endDay} ${endMonth} ${endYear}`;
+  }
+  if (startYear === endYear) {
+    if (startMonth === endMonth) {
+      return `${startDay} - ${endDay} ${endMonth} ${endYear}`;
+    }
+    return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${endYear}`;
+  }
+  return `${startDay} ${startMonth} ${startYear} - ${endDay} ${endMonth} ${endYear}`;
+};
