@@ -3,17 +3,20 @@ import React from 'react';
 import { useLocation } from 'react-router-dom'; // Import useLocation
 import Header from './Header';
 import Sidebar from './Sidebar';
+import { TimeSelection } from '../../types/time';
 import './MainLayout.css';
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  currentDate: Date;
-  activeTab: 'Day' | 'Week' | 'Month';
-  onDateChange: (newDate: Date) => void;
-  onTabChange: (tab: 'Day' | 'Week' | 'Month') => void;
+  timeSelection: TimeSelection;
+  onTimeSelectionChange: (selection: TimeSelection) => void;
+  // currentDate: Date;
+  // activeTab: 'Day' | 'Week' | 'Month';
+  // onDateChange: (newDate: Date) => void;
+  // onTabChange: (tab: 'Day' | 'Week' | 'Month') => void;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, currentDate, activeTab, onDateChange, onTabChange }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children, timeSelection, onTimeSelectionChange }) => {
   const location = useLocation(); // useLocation hook is now correctly inside <Router> context
 
   // Determine dynamic page title based on current route
@@ -39,10 +42,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, currentDate, activeTa
   return (
     <div className="layout-container">
       <Header
-        currentDate={currentDate}
-        activeTab={activeTab}
-        onDateChange={onDateChange}
-        onTabChange={onTabChange}
+        timeSelection={timeSelection}
+        onTimeSelectionChange={onTimeSelectionChange}
       />
       <div className="content-area">
         <Sidebar />
@@ -51,7 +52,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, currentDate, activeTa
           <h1 className="text-2xl font-bold text-gray-800 mb-4">{dynamicPageTitle}</h1> {/* Use dynamicPageTitle here */}
           {React.Children.map(children, child =>
             React.isValidElement(child)
-              ? React.cloneElement(child as React.ReactElement<any>, { currentDate, activeTab })
+              ? React.cloneElement(child as React.ReactElement<any>, {timeSelection})
               : child
           )}
         </main>

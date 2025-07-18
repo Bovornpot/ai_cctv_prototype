@@ -1,4 +1,5 @@
 // frontend/src/utils/dateUtils.ts
+import { TimeSelection } from "../types/time";
 
 // Helper function to get week number (ISO week date system)
 export const getWeekNumber = (date: Date): number => {
@@ -120,23 +121,56 @@ export const generateCalendarData = (currentDate: Date) => {
     return calendar;
 };
 
-export const formatDateRangeDisplay = (range: { start: Date, end: Date }): string => {
-  const startDay = range.start.getDate();
-  const startMonth = range.start.toLocaleString('th-TH', { month: 'short' });
-  const startYear = range.start.getFullYear();
-
-  const endDay = range.end.getDate();
-  const endMonth = range.end.toLocaleString('th-TH', { month: 'short' });
-  const endYear = range.end.getFullYear();
-
-  if (range.start.toDateString() === range.end.toDateString()) {
-    return `${endDay} ${endMonth} ${endYear}`;
-  }
-  if (startYear === endYear) {
-    if (startMonth === endMonth) {
-      return `${startDay} - ${endDay} ${endMonth} ${endYear}`;
-    }
-    return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${endYear}`;
-  }
-  return `${startDay} ${startMonth} ${startYear} - ${endDay} ${endMonth} ${endYear}`;
+// ฟังก์ชันสำหรับแปลงเลขสัปดาห์เป็นช่วงวันที่
+export const getWeekRangeFromWeekNumber = (year: number, week: number) => {
+    const d = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const start = new Date(d);
+    start.setUTCDate(d.getUTCDate() - 3);
+    const end = new Date(start);
+    end.setUTCDate(start.getUTCDate() + 6);
+    return { start, end };
 };
+
+export const formatTimeSelectionDisplay = (selection: TimeSelection): string => {
+    const { activeTab, mode } = selection;
+    const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+    if (activeTab === 'Day') {
+        if (selection.startDate.toDateString() === selection.endDate.toDateString()) {
+            return selection.startDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        return `${selection.startDate.toLocaleDateString('th-TH')} - ${selection.endDate.toLocaleDateString('th-TH')}`;
+    }
+    if (activeTab === 'Week') {
+        if (mode === 'single') {
+            const { start, end } = getWeekRangeFromWeekNumber(selection.year, selection.week);
+            return `สัปดาห์ที่ ${selection.week} (${start.getDate()} ${thaiMonthsShort[start.getMonth()]} - ${end.getDate()} ${thaiMonthsShort[end.getMonth()]})`;
+        } else {
+            return `สัปดาห์ที่ ${selection.startWeek} - ${selection.endWeek}, ${selection.year}`;
+        }
+    }
+    if (activeTab === 'Month') {
+        if (mode === 'single') {
+            return `${thaiMonths[selection.month]} ${selection.year}`;
+        } else {
+            return `${thaiMonths[selection.startMonth]} - ${thaiMonths[selection.endMonth]} ${selection.year}`;
+        }
+    }
+    return 'Select Date';
+}
+
+export const generateWeekGrid = (year: number): number[] => {
+    const d = new Date(year, 11, 31);
+    let week = getWeekNumber(d);
+    if (week === 1) {
+        week = getWeekNumber(new Date(year, 11, 24));
+    }
+    return Array.from({ length: week }, (_, i) => i + 1);
+};
+
+
+
+

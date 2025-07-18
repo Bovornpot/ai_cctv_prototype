@@ -6,20 +6,26 @@ import TopBranchesByAlertsWidget from '../components/widgets/TopBranchesByAlerts
 import ParkingViolationWidget from '../components/widgets/ParkingViolationWidget';
 import TableOccupancyWidget from '../components/widgets/TableOccupancyWidget';
 import ChilledBasketAlertWidget from '../components/widgets/ChilledBasketAlertWidget';
+import { TimeSelection } from '../types/time';
 
 interface DashboardOverviewPageProps {
-  currentDate: Date;
-  activeTab: 'Day' | 'Week' | 'Month';
+  timeSelection: TimeSelection;
 }
 
-const DashboardOverviewPage: React.FC<DashboardOverviewPageProps> = ({ currentDate, activeTab }) => {
+const DashboardOverviewPage: React.FC<DashboardOverviewPageProps> = ({ timeSelection }) => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchDashboardData(currentDate, activeTab.toLowerCase() as 'day' | 'week' | 'month');
+      console.log('Dashboard is fetching data with:', timeSelection);
+
+      // แปลงค่าจาก timeSelection เป็นรูปแบบที่ API เดิมต้องการ
+      const dateToFetch = timeSelection.activeTab === 'Day' ? timeSelection.endDate : new Date();
+      const tabToFetch = timeSelection.activeTab.toLowerCase() as 'day' | 'week' | 'month';
+      
+      const data = await fetchDashboardData(dateToFetch, tabToFetch);
       setDashboardData(data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -27,7 +33,7 @@ const DashboardOverviewPage: React.FC<DashboardOverviewPageProps> = ({ currentDa
     } finally {
       setLoading(false);
     }
-  }, [currentDate, activeTab]);
+  }, [timeSelection]);
 
   useEffect(() => {
     fetchData();

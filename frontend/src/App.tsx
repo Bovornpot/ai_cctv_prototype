@@ -1,35 +1,34 @@
 // frontend/src/App.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import DashboardOverviewPage from './pages/DashboardOverviewPage';
 import ParkingViolationDetailsPage from './pages/ParkingViolationDetailsPage';
+import { TimeSelection } from './types/time';
+import { getWeekNumber } from './utils/dateUtils';
 import './index.css';
 
 function App() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<'Day' | 'Week' | 'Month'>('Day');
+  //ADD: State ใหม่ที่ใช้ TimeSelection
+  const [timeSelection, setTimeSelection] = useState<TimeSelection>({
+    activeTab: 'Day',
+    mode: 'single',
+    startDate: new Date(),
+    endDate: new Date(),
+  });
 
-  const handleDateChange = (newDate: Date) => {
-    setCurrentDate(newDate);
+  //ADD: ฟังก์ชัน Handler ใหม่เพียงหนึ่งเดียวสำหรับอัปเดต TimeSelection object
+  const handleTimeSelectionChange = (newSelection: TimeSelection) => {
+    setTimeSelection(newSelection);
   };
 
-  const handleTabChange = (tab: 'Day' | 'Week' | 'Month') => {
-    setActiveTab(tab);
-    if (tab === 'Day' || tab === 'Week') {
-      setCurrentDate(new Date());
-    } else {
-      setCurrentDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-    }
-  };
+  
 
   return (
     <Router>
       <MainLayout
-        currentDate={currentDate}
-        activeTab={activeTab}
-        onDateChange={handleDateChange}
-        onTabChange={handleTabChange}
+        timeSelection={timeSelection}
+        onTimeSelectionChange={handleTimeSelectionChange}
         // pageTitle prop is now handled internally by MainLayout
       >
         <Routes>
@@ -37,15 +36,14 @@ function App() {
             path="/"
             element={
               <DashboardOverviewPage
-                currentDate={currentDate}
-                activeTab={activeTab}
+                timeSelection={timeSelection}
               />
             }
           />
           {/* <Route path="/parking-violations" element={<div className="p-6"><h2>Parking Violation Page</h2><p>Details will go here.</p></div>} /> */}
           <Route
             path="/parking-violations"
-            element={<ParkingViolationDetailsPage />} // <-- แก้จาก div เป็น Component ของเรา
+            element={<ParkingViolationDetailsPage timeSelection={timeSelection}/>}
           />
 
           <Route path="/table-occupancy" element={<div className="p-6"><h2>Table Occupancy Page</h2><p>Details will go here.</p></div>} />

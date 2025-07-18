@@ -7,6 +7,7 @@ import { ParkingViolationEvent, ParkingKpiData } from '../types/parkingViolation
 import ViolationsTable from '../components/parking/ViolationsTable';
 import KpiCards from '../components/parking/KpiCards';
 import ViolationFilters, { ParkingFilters } from '../components/parking/ViolationFilters';
+import { TimeSelection } from '../types/time';
 
 // --- Mock Data (ย้ายมาไว้ที่นี่เพื่อให้หาเจอ) ---
 const mockViolationData: ParkingViolationEvent[] = [
@@ -37,29 +38,25 @@ const mockKpiData: ParkingKpiData = {
   avgNormalParkingTime: 15,
 };
 // --- End of Mock Data ---
+interface ParkingViolationDetailsPageProps {
+  timeSelection: TimeSelection;
+}
 
-
-const ParkingViolationDetailsPage: React.FC = () => {
+const ParkingViolationDetailsPage: React.FC<ParkingViolationDetailsPageProps> = ({ timeSelection }) => {
   const [violations, setViolations] = useState<ParkingViolationEvent[]>([]);
   const [kpiData, setKpiData] = useState<ParkingKpiData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<ParkingFilters | null>(null);
-
-  const handleFilterChange = (newFilters: ParkingFilters) => {
-    console.log('Applying new filters:', newFilters);
-    setFilters(newFilters);
-  };
-
+  
   const fetchData = useCallback(async () => {
     setLoading(true);
-    console.log('Fetching data with filters:', filters);
+    console.log('ParkingViolationDetailsPage is fetching data with:', timeSelection);
     
     setTimeout(() => {
       setViolations(mockViolationData);
       setKpiData(mockKpiData);
       setLoading(false);
     }, 500);
-  }, [filters]);
+  }, [timeSelection]);
 
   useEffect(() => {
     fetchData();
@@ -68,7 +65,7 @@ const ParkingViolationDetailsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <ViolationFilters onFilterChange={handleFilterChange} />
+      {/* <ViolationFilters onFilterChange={handleFilterChange} /> */}
 
       {loading ? (
         <div className="flex items-center justify-center h-full py-20">
