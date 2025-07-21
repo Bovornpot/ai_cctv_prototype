@@ -1,0 +1,6 @@
+ultralytics==8.0.124 # หรือเวอร์ชันที่เข้ากันได้
+boxmot # หรือติดตั้งตามคู่มือ BoxMOT
+opencv-python # headless version for server environments
+numpy
+pyyaml
+scipy # สำหรับ Hungarian Algorithm ใน tracker (ปกติ boxmot มีอยู่แล้ว)
