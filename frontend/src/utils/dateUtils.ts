@@ -142,16 +142,28 @@ export const formatTimeSelectionDisplay = (selection: TimeSelection): string => 
         if (selection.startDate.toDateString() === selection.endDate.toDateString()) {
             return selection.startDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
         }
-        return `${selection.startDate.toLocaleDateString('th-TH')} - ${selection.endDate.toLocaleDateString('th-TH')}`;
+        return `${selection.startDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })} - ${selection.endDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}`;
     }
-    if (activeTab === 'Week') {
-        if (mode === 'single') {
-            const { start, end } = getWeekRangeFromWeekNumber(selection.year, selection.week);
-            return `สัปดาห์ที่ ${selection.week} (${start.getDate()} ${thaiMonthsShort[start.getMonth()]} - ${end.getDate()} ${thaiMonthsShort[end.getMonth()]})`;
+    if (selection.activeTab === 'Week') {
+        if (selection.mode === 'range') {
+            const start = getWeekRangeFromWeekNumber(selection.year, selection.startWeek).start;
+            const end = getWeekRangeFromWeekNumber(selection.year, selection.endWeek).end;
+
+            // แปลงเป็นวันที่ภาษาไทย
+            const startStr = start.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+            const endStr = end.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+
+        return `สัปดาห์ที่ ${selection.startWeek}-${selection.endWeek} (${startStr} - ${endStr}), ${selection.year}`;
         } else {
-            return `สัปดาห์ที่ ${selection.startWeek} - ${selection.endWeek}, ${selection.year}`;
-        }
+            const start = getWeekRangeFromWeekNumber(selection.year, selection.startWeek).start;
+            const end = getWeekRangeFromWeekNumber(selection.year, selection.endWeek).end;
+
+            const startStr = start.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+            const endStr = end.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+            
+        return `สัปดาห์ที่ ${selection.startWeek} (${startStr} - ${endStr}), ${selection.year}`;
     }
+  }
     if (activeTab === 'Month') {
         if (mode === 'single') {
             return `${thaiMonths[selection.month]} ${selection.year}`;

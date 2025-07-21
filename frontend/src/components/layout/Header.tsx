@@ -5,7 +5,7 @@ import { TimeSelection } from '../../types/time';
 import {
   formatTimeSelectionDisplay, //
   generateCalendarData,
-  getWeekRangeForDate,
+  // getWeekRangeForDate,
   getWeekNumber,
   generateWeekGrid,
   getWeekRangeFromWeekNumber,
@@ -23,14 +23,67 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
   const [mode, setMode] = useState<'single' | 'range'>('single');
   const [rangeStart, setRangeStart] = useState<Date | number | null>(null);
   const [viewDate, setViewDate] = useState(new Date());
+  const [localSelection, setLocalSelection] = useState<TimeSelection>(timeSelection);
 
   const pickerRef = useRef<HTMLDivElement>(null);
 
+  const today = new Date(); // วันที่และเวลาปัจจุบันเต็มๆ
+  const todayDateString = today.toDateString(); // แปลงเป็น String รูปแบบ 'Fri Jul 18 2025' เพื่อให้เปรียบเทียบแค่วันที่ได้ง่ายๆ
+  const todayWeek = getWeekNumber(today);      // เลขสัปดาห์ปัจจุบัน (เช่น 29)
+  const todayMonth = today.getMonth();        // เลขเดือนปัจจุบัน (เช่น 6 สำหรับเดือนกรกฎาคม เพราะเริ่มนับที่ 0)
+  const todayYear = today.getFullYear();  // ปีปัจจุบัน (เช่น 2025)
+
+  const [rangeStartDate, setRangeStartDate] = useState<Date | null>(null);
+  const [rangeStartWeek, setRangeStartWeek] = useState<number | null>(null);
+  const [rangeStartMonth, setRangeStartMonth] = useState<number | null>(null);
+
+  const todayString = today.toDateString();
+  const selectedStartDate = localSelection.activeTab === 'Day' ? localSelection.startDate : null;
+  const selectedEndDate = localSelection.activeTab === 'Day' ? localSelection.endDate : null;
+
+
+  const isTodaySelectedSingle = mode === 'single' && selectedStartDate?.toDateString() === todayString;
+  const isTodayInRange = mode === 'range' && selectedStartDate && selectedEndDate && today >= selectedStartDate && today <= selectedEndDate;
+
+  // ถ้าไม่มีการเลือกวันใด ๆ เลย
+  const noSelection = !selectedStartDate && !selectedEndDate;
+
+  // สุดท้าย ตัวแปรที่ใช้แสดง highlight
+  const showTodayHighlight = noSelection || isTodaySelectedSingle || isTodayInRange;
+
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  useEffect(() => {
+  // อัพเดททุก 1 ชั่วโมง (3600000 ms)
+  const intervalId = setInterval(() => {
+    setLastUpdated(new Date());
+  }, 3600000);
+
+  // อัพเดทตอนแรกตอน mount ด้วย (ถ้าต้องการ)
+  setLastUpdated(new Date());
+
+  return () => clearInterval(intervalId);
+}, []);
+
+  const formatTime = (date: Date) => {
+  return date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+};
+
+  useEffect(() => {
+  // นำค่าจาก timeSelection (prop) มาใส่ใน localSelection เมื่อ popup แสดงขึ้น
+    if (showDatePicker) {
+      setLocalSelection(timeSelection);
+    }
+  }, [showDatePicker, timeSelection]);
+
   useEffect(() => {
     if (timeSelection.activeTab === 'Day') {
-        setViewDate(timeSelection.startDate);
-    } else if (timeSelection.activeTab === 'Week' || timeSelection.activeTab === 'Month') {
-        setViewDate(new Date(timeSelection.year, 0, 1));
+      setViewDate(timeSelection.startDate);
+    } else if (timeSelection.activeTab === 'Week') {
+      const { start } = getWeekRangeFromWeekNumber(timeSelection.year, timeSelection.week);
+      setViewDate(start);
+    } else if (timeSelection.activeTab === 'Month') {
+      setViewDate(new Date(timeSelection.year, timeSelection.month, 1));
     }
   }, [timeSelection]);
 
@@ -78,15 +131,16 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
         onTimeSelectionChange({ ...timeSelection, mode, startDate: day, endDate: day });
         setShowDatePicker(false);
     } else { // range
-        if (!rangeStart) {
-            setRangeStart(day);
-        } else {
-            const start = rangeStart < day ? (rangeStart as Date) : day;
-            const end = rangeStart < day ? day : (rangeStart as Date);
-            onTimeSelectionChange({ ...timeSelection, mode, startDate: start, endDate: end });
-            setRangeStart(null);
-            setShowDatePicker(false);
-        }
+        if (!rangeStartDate) {
+          setRangeStartDate(day);
+          setLocalSelection({ ...timeSelection, mode, startDate: day, endDate: day });
+      } else {
+          const start = rangeStartDate < day ? rangeStartDate : day;
+          const end = rangeStartDate < day ? day : rangeStartDate;
+          onTimeSelectionChange({ ...timeSelection, mode, startDate: start, endDate: end });
+          setRangeStartDate(null);
+          setShowDatePicker(false);
+      }
     }
   };
 
@@ -97,13 +151,21 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
           onTimeSelectionChange({ ...timeSelection, mode, year: timeSelection.year, week: weekNum, startWeek: weekNum, endWeek: weekNum });
           setShowDatePicker(false);
       } else { // range
-          if (!rangeStart) {
-              setRangeStart(weekNum);
+          if (!rangeStartWeek) {
+              setRangeStartWeek(weekNum);
+              setLocalSelection({ 
+                ...timeSelection,
+                mode,
+                year: timeSelection.year,
+                week: weekNum,
+                startWeek: weekNum,
+                endWeek: weekNum 
+              });
           } else {
-              const start = Math.min(rangeStart as number, weekNum);
-              const end = Math.max(rangeStart as number, weekNum);
-              onTimeSelectionChange({ ...timeSelection, mode, year: timeSelection.year, week: start, startWeek: start, endWeek: end });
-              setRangeStart(null);
+              const start = Math.min(rangeStartWeek as number, weekNum);
+              const end = Math.max(rangeStartWeek as number, weekNum);
+              onTimeSelectionChange({ ...timeSelection, mode, startWeek: start, endWeek: end });
+              setRangeStartWeek(null);
               setShowDatePicker(false);
           }
       }
@@ -116,15 +178,16 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
           onTimeSelectionChange({ ...timeSelection, mode, year: timeSelection.year, month: monthIndex, startMonth: monthIndex, endMonth: monthIndex });
           setShowDatePicker(false);
       } else { // range
-          if (!rangeStart) {
-              setRangeStart(monthIndex);
+          if (rangeStartMonth == null) {
+            setRangeStartMonth(monthIndex);
+            setLocalSelection({ ...timeSelection, mode, startMonth: monthIndex, endMonth: monthIndex });
           } else {
-              const start = Math.min(rangeStart as number, monthIndex);
-              const end = Math.max(rangeStart as number, monthIndex);
-              onTimeSelectionChange({ ...timeSelection, mode, year: timeSelection.year, month: start, startMonth: start, endMonth: end });
-              setRangeStart(null);
-              setShowDatePicker(false);
-          }
+            const start = Math.min(rangeStartMonth as number, monthIndex);
+            const end = Math.max(rangeStartMonth as number, monthIndex);
+            onTimeSelectionChange({ ...timeSelection, mode, startMonth: start, endMonth: end });
+            setRangeStartMonth(null);
+            setShowDatePicker(false);
+          } 
       }
   };
 
@@ -145,6 +208,9 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
         // เมื่อคลิกข้างนอก ให้ปิด popup และเคลียร์ range selection ที่ค้างอยู่
         setShowDatePicker(false);
         setRangeStart(null);
+        setRangeStartDate(null);
+        setRangeStartWeek(null);
+        setRangeStartMonth(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -235,18 +301,22 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
                           
                           // Logic การ highlight วันที่เลือก
                           const dayString = day.toDateString();
-                          const isSelected = mode === 'single' && timeSelection.activeTab === 'Day' && timeSelection.startDate.toDateString() === dayString;
-                          const isInRange = mode === 'range' && timeSelection.activeTab === 'Day' && day >= timeSelection.startDate && day <= timeSelection.endDate;
+                          const isSelected = mode === 'single' && localSelection.activeTab === 'Day' && localSelection.startDate.toDateString() === dayString;
+                          const isInRange = mode === 'range' && localSelection.activeTab === 'Day' && day >= localSelection.startDate && day <= localSelection.endDate;
                           const isRangeEndpoint = isInRange && (day.toDateString() === timeSelection.startDate.toDateString() || day.toDateString() === timeSelection.endDate.toDateString());
                           const isPending = mode === 'range' && rangeStart && (rangeStart as Date).toDateString() === dayString;
+                          const isToday = day.toDateString() === todayDateString;
+                          const showTodayHighlight = isToday;
 
                           return (
-                            <button key={dayString} onClick={() => handleDaySelect(day)}
+                            <button 
+                              key={dayString} onClick={() => handleDaySelect(day)}
                               className={`p-2 text-sm rounded-md transition-colors ${
                                 isPending ? 'bg-blue-500 text-white ring-2 ring-blue-300' :
                                 isRangeEndpoint ? 'bg-blue-500 text-white' :
                                 isInRange ? 'bg-blue-200 hover:bg-blue-300' :
-                                isSelected ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'
+                                isSelected ? 'bg-blue-500 text-white' :
+                                showTodayHighlight && dayString === todayString ? 'bg-cyan-100 text-cyan-800' : 'hover:bg-gray-100'                          
                               }`}>
                               {day.getDate()}
                             </button>
@@ -275,12 +345,17 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
                         {generateCalendarData(viewDate).map((week, weekIndex) => (
                           week.map((day, dayIndex) => {
                             if (!day) return <div key={`${weekIndex}-${dayIndex}`} />;
-                            const { start } = getWeekRangeForDate(day);
-                            const isSelected = timeSelection.activeTab === 'Week' && timeSelection.week === getWeekNumber(day) && timeSelection.year === day.getFullYear();
+                            // const { start } = getWeekRangeForDate(day);
+                            const isSelected = localSelection.activeTab === 'Week' && localSelection.week === getWeekNumber(day) && localSelection.year === day.getFullYear();
+                            const isToday = day.toDateString() === todayDateString;
 
                             return (
-                              <button key={day.toDateString()} onClick={() => handleWeekDaySelect(day)}
-                                className={`p-2 text-sm rounded-md transition-colors ${isSelected ? 'bg-blue-200' : 'hover:bg-gray-100'}`}>
+                              <button 
+                                key={day.toDateString()} onClick={() => handleWeekDaySelect(day)}
+                                className={`p-2 text-sm rounded-md transition-colors ${
+                                  isSelected ? 'bg-blue-200' : 
+                                  isToday ? 'bg-cyan-100 text-cyan-800' : 'hover:bg-gray-100'
+                                  }`}>
                                 {day.getDate()}
                               </button>
                             );
@@ -304,18 +379,22 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
                       {/* ส่วน Grid แสดงสัปดาห์ */}
                       <div className="grid grid-cols-8 gap-2">
                         {generateWeekGrid(viewDate.getFullYear()).map((weekNum) => {
-                          const { startWeek, endWeek } = timeSelection.activeTab === 'Week' ? timeSelection : { startWeek: -1, endWeek: -1 };
+                          const { startWeek, endWeek } = localSelection.activeTab === 'Week' ? localSelection : { startWeek: -1, endWeek: -1 };
                           const isInRange = mode === 'range' && weekNum >= startWeek && weekNum <= endWeek;
                           const isRangeEndpoint = isInRange && (weekNum === startWeek || weekNum === endWeek);
                           const isPending = rangeStart === weekNum;
+                          const isCurrentWeek = weekNum === todayWeek && viewDate.getFullYear() === todayYear;
+                          const showCurrentWeekHighlight = noSelection && isCurrentWeek;
+
 
                           return (
-                            <button key={weekNum} onClick={() => handleWeekSelect(weekNum)}
+                            <button 
+                              key={weekNum} onClick={() => handleWeekSelect(weekNum)}
                               className={`flex items-center justify-center h-8 text-xs rounded-md transition-colors ${
                                 isPending ? 'bg-blue-500 text-white ring-2 ring-blue-300' :
                                 isRangeEndpoint ? 'bg-blue-500 text-white' :
                                 isInRange ? 'bg-blue-200 hover:bg-blue-300' :
-                                'hover:bg-gray-100'
+                                showCurrentWeekHighlight ? 'bg-cyan-100 text-cyan-800' : 'hover:bg-gray-100'
                               }`}>
                               {weekNum}
                             </button>
@@ -337,19 +416,24 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
                     <div className="grid grid-cols-4 gap-2">
                       {Array.from({ length: 12 }).map((_, monthIndex) => {
                         // Logic การ highlight เดือนที่เลือก
-                        const { month, startMonth, endMonth } = timeSelection.activeTab === 'Month' ? timeSelection : { month: -1, startMonth: -1, endMonth: -1 };
-                        const isSelected = mode === 'single' && month === monthIndex;
+                        const { month, startMonth, endMonth } = localSelection.activeTab === 'Month' ? localSelection : { month: -1, startMonth: -1, endMonth: -1 };
+                        const isSelected = mode === 'single' && localSelection.activeTab === 'Month' && localSelection.month === monthIndex;
                         const isInRange = mode === 'range' && monthIndex >= startMonth && monthIndex <= endMonth;
                         const isRangeEndpoint = isInRange && (monthIndex === startMonth || monthIndex === endMonth);
                         const isPending = rangeStart === monthIndex;
+                        const isCurrentMonth = monthIndex === todayMonth && viewDate.getFullYear() === todayYear;
+                        const showCurrentMonthHighlight = noSelection && isCurrentMonth;
 
                         return (
-                          <button key={monthIndex} onClick={() => handleMonthSelect(monthIndex)}
+                          <button 
+                            key={monthIndex} onClick={() => handleMonthSelect(monthIndex)}
                             className={`p-3 text-sm rounded-md transition-colors ${
                               isPending ? 'bg-blue-500 text-white ring-2 ring-blue-300' :
                               isRangeEndpoint ? 'bg-blue-500 text-white' :
                               isInRange ? 'bg-blue-200 hover:bg-blue-300' :
-                              isSelected ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'
+                              isSelected ? 'bg-blue-500 text-white' :
+                              showCurrentMonthHighlight ? 'bg-cyan-100 text-cyan-800' : 'hover:bg-gray-100'
+
                             }`}>
                             {new Date(0, monthIndex).toLocaleDateString('th-TH', { month: 'short' })}
                           </button>
@@ -358,6 +442,9 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
                     </div>
                   </div>
                 )}
+                <div className="text-xs text-gray-500 mt-4 text-right px-2">
+                  ข้อมูลอัพเดทล่าสุดเมื่อ {formatTime(lastUpdated)} น.
+                </div>
 
                 {/* 🗑️ REMOVE: ส่วน Quick actions และ Data Updated เดิมถูกนำออกทั้งหมด */}
               </div>

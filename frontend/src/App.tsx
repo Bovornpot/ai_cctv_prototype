@@ -5,7 +5,7 @@ import MainLayout from './components/layout/MainLayout';
 import DashboardOverviewPage from './pages/DashboardOverviewPage';
 import ParkingViolationDetailsPage from './pages/ParkingViolationDetailsPage';
 import { TimeSelection } from './types/time';
-import { getWeekNumber } from './utils/dateUtils';
+// import { getWeekNumber } from './utils/dateUtils';
 import './index.css';
 
 function App() {
