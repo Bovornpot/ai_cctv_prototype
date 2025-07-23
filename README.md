@@ -49,23 +49,35 @@ ai_cctv_prototype/
 │    │   │   │   ├── Sidebar.tsx    # แถบนำทางด้านซ้ายมือ (เมนูหลักและโปรไฟล์ผู้ใช้)
 │    │   │   │   └── Sidebar.css    # CSS สำหรับ Sidebar
 │    │   │   │
-│    │   │   └── widgets/        # โฟลเดอร์สำหรับ Component ของแต่ละ Widget บน Dashboard
-│    │   │       ├── OverallSystemPerformanceWidget.tsx # Widget แสดงภาพรวมระบบและประสิทธิภาพ (มีกราฟ Line Chart)
-│    │   │       ├── TopBranchesByAlertsWidget.tsx      # Widget แสดงสาขาที่มี Alerts สูงสุด (ใช้ AlertCard)
-│    │   │       ├── ParkingViolationWidget.tsx         # Widget แสดงข้อมูลการละเมิดจอดรถ (มี StatCard, รายการ, Line Chart)
-│    │   │       ├── TableOccupancyWidget.tsx           # Widget แสดงข้อมูลการใช้โต๊ะ (มี StatCard, ข้อความ, Bar Chart)
-│    │   │       └── ChilledBasketAlertWidget.tsx       # Widget แสดงข้อมูลแจ้งเตือนตะกร้าแช่เย็น (มี StatCard, รายการ, Bar Chart)
+│    │   │   ├── widgets/        # โฟลเดอร์สำหรับ Component ของแต่ละ Widget บน Dashboard
+│    │   │   │   ├── OverallSystemPerformanceWidget.tsx # Widget แสดงภาพรวมระบบและประสิทธิภาพ (มีกราฟ Line Chart)
+│    │   │   │   ├── TopBranchesByAlertsWidget.tsx      # Widget แสดงสาขาที่มี Alerts สูงสุด (ใช้ AlertCard)
+│    │   │   │   ├── ParkingViolationWidget.tsx         # Widget แสดงข้อมูลการละเมิดจอดรถ (มี StatCard, รายการ, Line Chart)
+│    │   │   │   ├── TableOccupancyWidget.tsx           # Widget แสดงข้อมูลการใช้โต๊ะ (มี StatCard, ข้อความ, Bar Chart)
+│    │   │   │   └── ChilledBasketAlertWidget.tsx       # Widget แสดงข้อมูลแจ้งเตือนตะกร้าแช่เย็น (มี StatCard, รายการ, Bar Chart)
+│    │   │   │
+|    |   |   └── parking/
+│    │   │       ├── KpiCards.tsx               # แสดงชุดการ์ด KPI สรุปสถิติการละเมิดจอดรถ เช่น จำนวนเหตุการณ์ เวลาละเมิดเฉลี่ย และเวลาจอดรถปกติ
+│    │   │       ├── TopBranchesList.tsx        # แสดงรายการสาขาที่มีการละเมิดจอดรถสูงสุด พร้อมแสดงลำดับและจำนวนการละเมิดในรูปแบบรายการที่คลิกได้
+│    │   │       ├── ViolationsChart.tsx        # แสดงกราฟแท่ง (Bar Chart) แสดงจำนวนการละเมิดจอดรถในแต่ละช่วงหรือแต่ละสาขา เพื่อวิเคราะห์แนวโน้มและเปรียบเทียบข้อมูล
+│    │   │       ├── ViolationsTable.css        # สไตล์ CSS สำหรับตารางแสดงรายละเอียดการละเมิดจอดรถ รวมถึงการจัดรูปแบบตาราง, hover effect และแถบแสดงสถานะ (Status Badge)
+│    │   │       └── ViolationsTable.tsx        # ตารางแสดงรายละเอียดเหตุการณ์ละเมิดจอดรถ พร้อมฟังก์ชันกรองข้อมูลตามสถานะ (Violation / All) และแสดงสถานะด้วย Badge สีต่าง ๆ
 │    │   │
 │    │   ├── contexts/           # (ถ้าจำเป็น) สำหรับ React Context API เพื่อจัดการ Global State ที่ซับซ้อน
 │    │   │
 │    │   ├── hooks/              # สำหรับ Custom React Hooks ที่นำมาใช้ซ้ำได้ (เช่น useFetchData)
 │    │   │
 │    │   ├── pages/              # สำหรับ Component ของหน้าจอหลักแต่ละหน้า
-│    │   │   └── DashboardOverviewPage.tsx # หน้าจอ Dashboard Overview หลัก (จัดวาง Widgets ด้วย Grid, ลด gap)
-│    │   │   # ├── ParkingViolationDetailsPage.tsx # (ในอนาคต) หน้ารายละเอียด Parking Violation
-│    │   │   # └── ... (หน้าอื่นๆ ที่ Sidebar Link ไปถึง)
+│    │   │   ├── DashboardOverviewPage.tsx # หน้าจอ Dashboard Overview หลัก (จัดวาง Widgets ด้วย Grid, ลด gap)
+│    │   │   └── ParkingViolationDetailsPage.tsx # หน้ารายละเอียด Parking Violation
+│    │   │   
 │    │   │
 │    │   ├── styles/             # (Optional) ไฟล์ CSS/SCSS ทั่วไป, Global Styles, หรือ Themes (นอกเหนือจาก index.css)
+│    │   │   └── global.css 
+│    │   │
+│    │   ├── types/              # ฟังก์ชัน Helper ต่างๆ ที่ใช้ทั่วโปรเจกต์
+│    │   │   ├── parkingViolation.ts    # กำหนดชนิดข้อมูล (TypeScript types/interfaces) ที่เกี่ยวข้องกับการละเมิดจอดรถ เช่น สถานะเหตุการณ์, โครงสร้างข้อมูลเหตุการณ์ละเมิด 
+│    │   │   └── time.ts    # กำหนดชนิดข้อมูลสำหรับการเลือกช่วงเวลา (Day, Week, Month) ทั้งแบบsingle หรือ range เพื่อใช้ในการกรองข้อมูลตามเวลา
 │    │   │
 │    │   ├── utils/              # ฟังก์ชัน Helper ต่างๆ ที่ใช้ทั่วโปรเจกต์
 │    │   │   └── dateUtils.ts    # ฟังก์ชันช่วยในการจัดการและจัดรูปแบบวันที่/เวลา (เพิ่ม Logic 'สัปดาห์นี้'/'เดือนนี้')
