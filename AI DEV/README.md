@@ -66,3 +66,15 @@ python main_monitor.py --show-display
 
 ใช้ --show-display เพื่อดูผลลัพธ์วิดีโอแบบเรียลไทม์
 
+conda activate car_parking_env
+
+cd C:\Users\chayaphonlamt\Documents\CarParkingMonitor
+
+python main_monitor.py --config-file config.yaml --show-display
+
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+python select_roi.py "C:/Users/chayaphonlamt/Videos/Captures/petchhome1.mp4" "parking_zone_camera1.json"
+
+ --trusted-host pypi.org --trusted-host files.pythonhosted.org
+
