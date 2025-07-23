@@ -1,4 +1,4 @@
-โหลดไฟล์ model สำหรับ Re-id รถได้ที่ลิ้งค์นี้
+สร้าง folder ชื่อ weights แล้วโหลดไฟล์ model สำหรับ Re-id รถได้ที่ลิ้งค์นี้ ใส่ไว้ใน folder weigths
 https://drive.google.com/drive/folders/1axWgEZHUYCQj8PD0FLrpcxKBaR4qGi2D?usp=sharing
 
 ระบบ AI CCTV ตรวจจับที่จอดรถ
@@ -65,4 +65,16 @@ python main_monitor.py --show-display
 
 
 ใช้ --show-display เพื่อดูผลลัพธ์วิดีโอแบบเรียลไทม์
+
+conda activate car_parking_env
+
+cd C:\Users\chayaphonlamt\Documents\CarParkingMonitor
+
+python main_monitor.py --config-file config.yaml --show-display
+
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+python select_roi.py "C:/Users/chayaphonlamt/Videos/Captures/petchhome1.mp4" "parking_zone_camera1.json"
+
+ --trusted-host pypi.org --trusted-host files.pythonhosted.org
 

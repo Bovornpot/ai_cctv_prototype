@@ -81,7 +81,8 @@ def run(args):
 
         if args.show_display:
             if not latest_frames: # <--- เพิ่มการตรวจสอบนี้:
-                print("[Monitor] No frames in latest_frames dictionary to display yet.")
+                # print("[Monitor] No frames in latest_frames dictionary to display yet.")
+                pass
             for cam_name, frame_data in latest_frames.items():
                 if frame_data is not None:
                     original_width_display = frame_data.shape[1]
