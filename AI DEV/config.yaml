@@ -6,7 +6,7 @@ yolo_model: "yolov8m.pt" # <<< ปรับ: ใช้ yolov8n.pt (nano) ซึ�
 img_size: [640]          # <<< ปรับ: ลดขนาดภาพที่ป้อนให้โมเดล ถ้าวิดีโอใหญ่กว่านี้จะถูกย่อ
                          #      (Logs เดิมของคุณแสดง 384x640 ซึ่งเล็กอยู่แล้ว ถ้า model.track จัดการดีก็อาจไม่ต้องปรับตรงนี้มาก)
 conf_threshold: 0.3
-iou_threshold: 0.5
+iou_threshold: 0.4
 
 # Re-ID Model Settings (for tracking)
 # ควรใช้โมเดล Re-ID ที่เล็กและ optimized สำหรับ CPU หรือฟอร์แมต ONNX/OpenVINO
@@ -16,18 +16,18 @@ reid_model: "/weights/model_best.pth" # <<< แนะนำ: ใช้ osnet_x0_
 # Path ไปยัง BoxMOT config files (ในโฟลเดอร์ boxmot/configs)
 boxmot_config_path: boxmot/configs/deepocsort.yaml
 
-detection_confidence_threshold: 0.15
-car_class_id: [2, 5, 7] # ตรวจสอบให้แน่ใจว่า class ID เหล่านี้ถูกต้องสำหรับโมเดลของคุณ
+detection_confidence_threshold: 0.10
+car_class_id: [2, 5,7] # ตรวจสอบให้แน่ใจว่า class ID เหล่านี้ถูกต้องสำหรับโมเดลของคุณ
 
 # Tracking Method (BoxMOT options)
 tracking_method: "deepocsort"
 per_class_tracking: False
 
-# Settings for faster testing
-debug_settings:
-  enabled: true                  # เปิด/ปิด โหมดทดสอบ
-  mock_warning_minutes: 0.5      # แจ้งเตือน Warning ที่ 30 วินาที
-  mock_violation_minutes: 1.0    # แจ้งเตือน Violation (และแคปภาพ) ที่ 1 นาที
+# # Settings for faster testing
+# debug_settings:
+#   enabled: true                  # เปิด/ปิด โหมดทดสอบ
+#   mock_warning_minutes: 0.5      # แจ้งเตือน Warning ที่ 30 วินาที
+#   mock_violation_minutes: 1.0    # แจ้งเตือน Violation (และแคปภาพ) ที่ 1 นาที
 
 # Default Parking Thresholds
 parking_time_limit_minutes: 15
@@ -36,7 +36,7 @@ parking_time_threshold_seconds: 10 #ถึงจะถือว่า "จอด
 grace_period_frames_exit: 20 # จำนวนเฟรมที่ยอมให้รถออกนอกโซนชั่วคราวได้ก่อนตัดสถานะจอด
 
 # Movement Detection for Parking
-movement_threshold_px: 60.0
+movement_threshold_px: 80.0
 movement_frame_window: 120 # ลองลดค่านี้ถ้ายังช้ามาก (เช่น 10-20) แต่จะแม่นยำน้อยลง
 
 # Output Settings
@@ -49,9 +49,6 @@ half_precision: False # <<< ปรับ: ต้องเป็น False เม�
 
 # ### FIX: เพิ่ม API Key สำหรับการยืนยันตัวตนกับ Backend ###
 api_key: "nemo1234" # ต้องเป็นค่าเดียวกับที่ตั้งไว้ใน main.py
-
-# Default tracker config file
-tracker_config_file_default: "trackers/botsort.yaml" # นี่คือไฟล์ config สำหรับ tracker (botsort/bytetrack)
 
 # Display Settings (ตอนนี้ใช้สำหรับแต่ละหน้าต่างกล้อง)
 display_combined_max_width: 960 # <<< ปรับ: ลดขนาดสูงสุด เพื่อให้แต่ละหน้าต่างไม่ใหญ่เกินไป
@@ -71,16 +68,16 @@ brightness_method: clahe            # clahe หรือ histogram
 # Multiple Video Sources Configuration
 video_sources:
   - name: "petchhome_cam"
-    source_path: "C:/Users/chayaphonlamt/Documents/CarParkingMonitor/test.mp4"
+    source_path: "C:/Users/chayaphonlamt/Documents/CarParkingMonitor/kubon_BE (1).mp4"
     parking_zone_file: "parking_zone_camera1.json"
-    branch_id: "BKK_001" # <-- เพิ่ม field นี้
-    camera_id: "CAM_FG_001" # <-- เพิ่ม field นี้
+    branch_id: "kubon_BE" # <-- เพิ่ม field นี้
+    camera_id: "D1 F1_11970_BE" # <-- เพิ่ม field นี้
 
-  # - name: "petchhome1_cam"
-  #   source_path: "C:/Users/chayaphonlamt/Documents/CarParkingMonitor/night2.mp4"
-  #   parking_zone_file: "parking_zone_camera2.json"
-  #   branch_id: "BKK_001" # <-- อาจเป็นสาขาเดียวกันหรือคนละสาขา
-  #   camera_id: "CAM_FG_002" # <-- เพิ่ม field นี้
+  - name: "petchhome1_cam"
+    source_path: "C:/Users/chayaphonlamt/Documents/CarParkingMonitor/kubon_BE (2).mp4"
+    parking_zone_file: "parking_zone_camera2.json"
+    branch_id: "kubon_BE" # <-- อาจเป็นสาขาเดียวกันหรือคนละสาขา
+    camera_id: "D2 F2_11970_BE" # <-- เพิ่ม field นี้
 
 # Performance Settings for CPU (and relevant for Edge Devices too)
 performance_settings:
