@@ -69,6 +69,7 @@ python main_monitor.py --show-display
 conda activate car_parking_env
 
 cd C:\Users\chayaphonlamt\Documents\CarParkingMonitor
+"C:\Users\Loq\Documents\ai_nemo"
 
 python main_monitor.py --config-file config.yaml --show-display
 
