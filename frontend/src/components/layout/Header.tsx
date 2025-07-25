@@ -15,9 +15,11 @@ import './Header.css';
 interface HeaderProps {
   timeSelection: TimeSelection;
   onTimeSelectionChange: (selection: TimeSelection) => void;
+  branchQuery: string;
+  onBranchQueryChange: (query: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange }) => {
+const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange, branchQuery, onBranchQueryChange  }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [mode, setMode] = useState<'single' | 'range'>('single');
@@ -480,7 +482,10 @@ const Header: React.FC<HeaderProps> = ({ timeSelection, onTimeSelectionChange })
         </div>
 
         {/* --- ปุ่ม Search สาขา (คงเดิม ไม่มีการเปลี่ยนแปลง) --- */}
-        <input type="text" placeholder="สาขา" className="header-branch-input" />
+        <input type="text" placeholder="สาขา" className="header-branch-input" 
+          value={branchQuery}
+          onChange={(e) => onBranchQueryChange(e.target.value)}
+        />
         <button className="header-search-btn">
           <Search className="w-5 h-5" />
         </button>

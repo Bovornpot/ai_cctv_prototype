@@ -18,11 +18,13 @@ export interface ParkingViolationEvent {
   exitTime: string | null;
   durationMinutes: number;
   isViolation: boolean;
+  total_parking_sessions: number;
   evidenceImageUrl?: string;
 }
 
 export interface ParkingKpiData {
   totalViolations: number;
+  total_parking_sessions: number;
   ongoingViolations: number;
   avgViolationDuration: number; // in minutes
   avgNormalParkingTime: number; // in minutes

@@ -10,16 +10,20 @@ import { TimeSelection } from '../types/time';
 
 interface DashboardOverviewPageProps {
   timeSelection: TimeSelection;
+  branchQuery: string;
 }
 
-const DashboardOverviewPage: React.FC<DashboardOverviewPageProps> = ({ timeSelection }) => {
+const DashboardOverviewPage: React.FC<DashboardOverviewPageProps> = ({ timeSelection, branchQuery  }) => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('Dashboard is fetching data with:', timeSelection);
+      console.log('Fetching data with new filters:');
+      console.log('Time Selection:', timeSelection);
+      console.log('Branch Query:', branchQuery);
+      // console.log('Dashboard is fetching data with:', timeSelection);
 
       // แปลงค่าจาก timeSelection เป็นรูปแบบที่ API เดิมต้องการ
       const dateToFetch = timeSelection.activeTab === 'Day' ? timeSelection.endDate : new Date();
@@ -33,7 +37,7 @@ const DashboardOverviewPage: React.FC<DashboardOverviewPageProps> = ({ timeSelec
     } finally {
       setLoading(false);
     }
-  }, [timeSelection]);
+  }, [timeSelection, branchQuery]);
 
   useEffect(() => {
     fetchData();

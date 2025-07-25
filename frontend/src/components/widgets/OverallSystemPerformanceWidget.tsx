@@ -18,24 +18,28 @@ const OverallSystemPerformanceWidget: React.FC<OverallSystemPerformanceWidgetPro
           value={data.onlineBranches.toLocaleString()}
           subtitle="สาขา"
           color="text-green-600"
+          subtitleColor=""
         />
         <StatCard
           title="กล้องที่ Online"
           value={data.onlineCameras.toLocaleString()}
           subtitle="กล้อง"
           color="text-blue-600"
+          subtitleColor=""
         />
         <StatCard
           title="กล้องที่ Offline"
           value={data.offlineCameras.toLocaleString()}
           subtitle="กล้อง"
           color="text-red-600"
+          subtitleColor=""
         />
         <StatCard
           title="คำเตือนล่าสุด"
           value={data.latestAlerts}
           subtitle="คำเตือน"
           color="text-orange-600"
+          subtitleColor=""
         />
       </div>
 

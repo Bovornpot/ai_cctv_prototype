@@ -10,13 +10,16 @@ interface MainLayoutProps {
   children: React.ReactNode;
   timeSelection: TimeSelection;
   onTimeSelectionChange: (selection: TimeSelection) => void;
+
+  branchQuery: string;
+  onBranchQueryChange: (query: string) => void;
   // currentDate: Date;
   // activeTab: 'Day' | 'Week' | 'Month';
   // onDateChange: (newDate: Date) => void;
   // onTabChange: (tab: 'Day' | 'Week' | 'Month') => void;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, timeSelection, onTimeSelectionChange }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children, timeSelection, onTimeSelectionChange, branchQuery, onBranchQueryChange }) => {
   const location = useLocation(); // useLocation hook is now correctly inside <Router> context
 
   // Determine dynamic page title based on current route
@@ -44,6 +47,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, timeSelection, onTime
       <Header
         timeSelection={timeSelection}
         onTimeSelectionChange={onTimeSelectionChange}
+        branchQuery={branchQuery}
+        onBranchQueryChange={onBranchQueryChange}
       />
       <div className="content-area">
         <Sidebar />

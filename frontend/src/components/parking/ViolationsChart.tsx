@@ -2,8 +2,8 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ChartData {
-  name: string;
-  violations: number;
+  label: string;
+  value: number;
 }
 
 interface ViolationsChartProps {
@@ -17,10 +17,10 @@ const ViolationsChart: React.FC<ViolationsChartProps> = ({ data }) => {
       <ResponsiveContainer>
         <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+          <XAxis dataKey="label" tick={{ fontSize: 12 }} />
           <YAxis tick={{ fontSize: 12 }} />
           <Tooltip cursor={{fill: 'rgba(239, 68, 68, 0.1)'}} />
-          <Bar dataKey="violations" fill="#ef4444" name="จำนวนการละเมิด" />
+          <Bar dataKey="value" fill="#ef4444" name="จำนวนการละเมิด" />
         </BarChart>
       </ResponsiveContainer>
     </div>

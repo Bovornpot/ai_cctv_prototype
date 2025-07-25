@@ -27,24 +27,28 @@ const ParkingViolationWidget: React.FC<ParkingViolationWidgetProps> = ({ data })
             value={data.currentOverdueCars}
             subtitle="คัน"
             color="text-red-600"
+            subtitleColor=""
           />
           <StatCard
             title="เหตุการณ์ที่เกิดขึ้น"
             value={data.totalEvents}
             subtitle="เหตุการณ์"
             color="text-gray-800"
+            subtitleColor=""
           />
           <StatCard
             title="เวลาจอดรถเฉลี่ย"
             value={`${data.avgParkingTime} นาที`}
             subtitle="เฉลี่ย"
             color="text-blue-600"
+            subtitleColor=""
           />
           <StatCard
             title="เวลาเฉลี่ยละเมิด"
             value={`${data.avgViolationDuration} นาที`}
             subtitle="เฉลี่ย"
             color="text-orange-600"
+            subtitleColor=""
           />
         </div>
 

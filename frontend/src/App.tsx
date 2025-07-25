@@ -17,6 +17,8 @@ function App() {
     endDate: new Date(),
   });
 
+  const [branchQuery, setBranchQuery] = useState<string>('');
+
   //ADD: ฟังก์ชัน Handler ใหม่เพียงหนึ่งเดียวสำหรับอัปเดต TimeSelection object
   const handleTimeSelectionChange = (newSelection: TimeSelection) => {
     setTimeSelection(newSelection);
@@ -29,6 +31,8 @@ function App() {
       <MainLayout
         timeSelection={timeSelection}
         onTimeSelectionChange={handleTimeSelectionChange}
+        branchQuery={branchQuery}
+        onBranchQueryChange={setBranchQuery}
         // pageTitle prop is now handled internally by MainLayout
       >
         <Routes>
@@ -36,14 +40,16 @@ function App() {
             path="/"
             element={
               <DashboardOverviewPage
-                timeSelection={timeSelection}
-              />
-            }
+              timeSelection={timeSelection}
+              branchQuery={branchQuery}/>}
           />
           {/* <Route path="/parking-violations" element={<div className="p-6"><h2>Parking Violation Page</h2><p>Details will go here.</p></div>} /> */}
           <Route
             path="/parking-violations"
-            element={<ParkingViolationDetailsPage timeSelection={timeSelection}/>}
+            element={
+            <ParkingViolationDetailsPage 
+            timeSelection={timeSelection} 
+            branchQuery={branchQuery}/>}
           />
 
           <Route path="/table-occupancy" element={<div className="p-6"><h2>Table Occupancy Page</h2><p>Details will go here.</p></div>} />

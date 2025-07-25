@@ -27,24 +27,28 @@ const ChilledBasketAlertWidget: React.FC<ChilledBasketAlertWidgetProps> = ({ dat
             value={data.currentAlertBaskets}
             subtitle="ตะกร้า"
             color="text-red-600"
+            subtitleColor=""
           />
           <StatCard
             title="เหตุที่เกิดขึ้น"
             value={data.totalAlertEvents}
             subtitle="เหตุการณ์"
             color="text-gray-800"
+            subtitleColor=""
           />
           <StatCard
             title="เวลาเฉลี่ยที่ใช้"
             value={`${data.avgUsageTime} นาที`}
             subtitle="เฉลี่ย"
             color="text-blue-600"
+            subtitleColor=""
           />
           <StatCard
             title="เวลาเฉลี่ยนอกโซน"
             value={`${data.avgOutOfZoneTime} นาที`}
             subtitle="เฉลี่ย"
             color="text-orange-600"
+            subtitleColor=""
           />
         </div>
 

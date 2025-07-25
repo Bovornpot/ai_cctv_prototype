@@ -27,24 +27,28 @@ const TableOccupancyWidget: React.FC<TableOccupancyWidgetProps> = ({ data }) => 
             value={data.occupiedTables}
             subtitle="โต๊ะ"
             color="text-green-600"
+            subtitleColor=""
           />
           <StatCard
             title="สาขาที่โต๊ะเต็ม"
             value={data.totalFullBranches}
             subtitle="สาขา"
             color="text-orange-600"
+            subtitleColor=""
           />
           <StatCard
             title="เวลาเฉลี่ยใช้โต๊ะ"
             value={`${data.avgTableUsageTime} นาที`}
             subtitle="เฉลี่ย"
             color="text-blue-600"
+            subtitleColor=""
           />
           <StatCard
             title="คนที่ใช้โต๊ะเฉลี่ย"
             value={data.avgPeoplePerTable}
             subtitle="คน"
             color="text-purple-600"
+            subtitleColor=""
           />
         </div>
 
