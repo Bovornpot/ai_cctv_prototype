@@ -136,6 +136,7 @@ async def create_inference_result(
 
             db_item = database.DBParkingViolation( 
                 timestamp=timestamp_aware_utc,
+                branch=pv_data.branch,
                 branch_id=pv_data.branch_id,
                 camera_id=pv_data.camera_id,
                 event_type=pv_data.event_type, 
@@ -313,6 +314,7 @@ def get_DBParkingViolation(
     return [
         schemas.ParkingViolationData(
             timestamp=v.timestamp.replace(tzinfo=pytz.utc).astimezone(thailand_tz) if v.timestamp else None,
+            branch=v.branch,
             branch_id=v.branch_id,
             camera_id=v.camera_id,
             event_type=v.event_type,
