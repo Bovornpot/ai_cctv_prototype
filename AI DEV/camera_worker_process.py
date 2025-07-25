@@ -80,6 +80,7 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
     cam_name = cam_cfg['name']
     source_path = str(cam_cfg['source_path'])
     roi_file = Path(cam_cfg['parking_zone_file'])
+    branch = cam_cfg.get('branch', 'unknown_branch_name')
     branch_id = cam_cfg.get('branch_id', 'unknown_branch')
     camera_id = cam_cfg.get('camera_id', cam_name)
     logger = logging.getLogger(f"camera_worker_process.{camera_id}")
@@ -104,7 +105,6 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
     cam_save_dir = increment_path(Path(config['output_dir']) / cam_name, exist_ok=False)
     cam_save_dir.mkdir(parents=True, exist_ok=True)
     
-    # ### แก้ไข ###: เปลี่ยนชื่อตัวแปรเพื่อความชัดเจน
     parking_zones_original = load_parking_zone(roi_file)
     if parking_zones_original is None or not parking_zones_original:
         logger.error(f"[{cam_name}] Error: ROI coordinates file '{roi_file}' not found or invalid. Exiting worker.")
@@ -127,7 +127,6 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
     scale_x = target_inference_width / original_video_width if original_video_width > 0 else 1
     scale_y = target_inference_height / original_video_height if original_video_height > 0 else 1
     
-    # ### แก้ไข ###: ปรับการคำนวณ scale ให้รองรับหลายโซน
     scaled_parking_zones = []
     for polygon in parking_zones_original:
         scaled_polygon = [[int(p[0] * scale_x), int(p[1] * scale_y)] for p in polygon]
@@ -141,7 +140,6 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
     if warning_time_limit_minutes is None:
         warning_time_limit_minutes = parking_time_limit_minutes - 2 if isinstance(parking_time_limit_minutes, int) and parking_time_limit_minutes > 2 else 13
 
-    # ### แก้ไข ###: ส่งลิสต์ของโซนทั้งหมดเข้าไปใน CarTrackerManager
     car_tracker_manager = CarTrackerManager(
         scaled_parking_zones,
         parking_time_limit_minutes,
@@ -169,19 +167,13 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
     while True:
         ret, frame = cap.read()
         
-        # ### เพิ่ม ###: ตรรกะการจัดการเมื่อวิดีโอจบ หรือกล้องหลุด
+        # ### แก้ไข ###: ตรรกะการจัดการเมื่อวิดีโอจบ หรือกล้องหลุด
         if not ret:
             is_video_file = not source_path.startswith(('rtsp://', 'http://', 'https://')) and not source_path.isnumeric()
             
             if is_video_file:
-                logger.warning(f"[{cam_name}] End of video file. Resetting tracker and looping video.")
-                if hasattr(model, 'tracker'):
-                    model.tracker.reset()
-                car_tracker_manager.reset()
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                frame_idx = 0
-                time.sleep(1)
-                continue
+                logger.warning(f"[{cam_name}] End of video file. Worker will now terminate.")
+                break # ### แก้ไข ###: ออกจากลูป while True เมื่อวิดีโอจบ
             else:
                 logger.warning(f"[{cam_name}] Stream ended or connection lost. Attempting to reconnect...")
                 cap.release()
@@ -207,7 +199,7 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
             elif config.get('brightness_method', 'clahe').lower() == 'histogram':
                 resized_frame = adjust_brightness_histogram(resized_frame)
 
-        results = model.track(resized_frame, persist=True, show=False, conf=config['detection_confidence_threshold'], classes=config['car_class_id'], verbose=False)
+        results = model.track(resized_frame, persist=True, show=False, conf=config['detection_confidence_threshold'], classes=config['car_class_id'], tracker=config.get('tracker_config_file_default', "bytetrack.yaml"), verbose=False)
 
         current_frame_tracks_for_manager = []
         if results and results[0].boxes is not None and results[0].boxes.id is not None:
@@ -224,7 +216,8 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
                             'cls': int(box.cls[0])
                         })
 
-        alerts = car_tracker_manager.update(current_frame_tracks_for_manager, frame_idx, resized_frame)
+        # <<< แก้ไข: เพิ่ม original_frame=frame เพื่อส่งเฟรมต้นฉบับเข้าไปด้วย
+        alerts = car_tracker_manager.update(current_frame_tracks_for_manager, frame_idx, resized_frame, original_frame=frame)
         
         for alert_msg in alerts:
             logger.info(f"ALERT [{cam_name}]: {alert_msg}")
@@ -240,6 +233,7 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
             payload_to_send = {
                 "parking_violation": {
                     "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "branch": branch,
                     "branch_id": branch_id,
                     "camera_id": camera_id,
                     **event_for_json
@@ -257,7 +251,6 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
         if mot_save_path:
             write_mot_results(mot_save_path, frame_idx, current_frame_tracks_for_manager)
 
-        # ### แก้ไข ###: เรียกใช้ฟังก์ชัน draw_parking_zones
         draw_parking_zones(resized_frame, scaled_parking_zones)
         for track_id, car_info in car_tracker_manager.tracked_cars.items():
             if 'current_bbox' in car_info and car_info['current_bbox'] is not None:
@@ -341,13 +334,51 @@ async def camera_worker_async(cam_cfg, config, display_queue, stats_queue, show_
         if video_writer and video_writer.isOpened():
             video_writer.write(resized_frame)
 
+    # --- ส่วนท้ายนี้จะถูกเรียกใช้เมื่อออกจากลูป while True (เช่น วิดีโอจบ) ---
+    logger.info(f"[{cam_name}] Video stream ended. Finalizing remaining tracked cars...")
+
+    # 1. เรียกใช้เมธอดเพื่อปิดท้าย session ของรถที่ยังจอดอยู่
+    car_tracker_manager.finalize_all_sessions(frame_idx)
+
+    # 2. ดึง event ทั้งหมดที่ถูกสร้างขึ้น (รวมถึง event สุดท้าย)
+    final_events = car_tracker_manager.get_parking_events_for_api()
+
+    # 3. สร้าง Payload และส่งข้อมูลสุดท้ายไปที่ API
+    if final_events:
+        logger.info(f"[{cam_name}] Sending {len(final_events)} final events to API...")
+        final_payloads_to_send = []
+        for event in final_events:
+            event_for_json = event.copy()
+            if 'entry_time' in event_for_json and isinstance(event_for_json['entry_time'], datetime):
+                event_for_json['entry_time'] = event_for_json['entry_time'].isoformat() + "Z"
+            if 'exit_time' in event_for_json and isinstance(event_for_json['exit_time'], datetime):
+                event_for_json['exit_time'] = event_for_json['exit_time'].isoformat() + "Z"
+
+            final_payloads_to_send.append({
+                "parking_violation": {
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "branch": branch,
+                    "branch_id": branch_id,
+                    "camera_id": camera_id,
+                    **event_for_json
+                }
+            })
+
+        # ส่ง event ทั้งหมดพร้อมกัน
+        await asyncio.gather(*[send_data_to_api(camera_id, payload, api_key) for payload in final_payloads_to_send])
+        logger.info(f"[{cam_name}] Finished sending final events.")
+
+
+    # 4. ปล่อยทรัพยากร
     cap.release()
     if video_writer:
         video_writer.release()
-    
-    final_stats_data = car_tracker_manager.get_all_parking_sessions_data(frame_idx)
+
+    # 5. ส่งสถิติสรุปสุดท้ายไปยัง process หลัก (ถ้ายังต้องการ)
+    # หมายเหตุ: finalize_all_sessions ได้เก็บสถิติไว้ในตัวแล้ว
+    final_stats_data = car_tracker_manager.get_parking_statistics() 
     stats_queue.put((cam_name, final_stats_data))
-    
+
     logger.info(f"[{cam_name}] Worker has stopped.")
 
 # --- Wrapper function for multiprocessing.Process (โค้ดเดิม) ---
