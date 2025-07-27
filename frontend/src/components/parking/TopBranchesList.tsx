@@ -44,7 +44,7 @@ const TopBranchesList: React.FC<TopBranchesListProps> = ({ data, timeSelection }
         </button>
       </div>
 
-      <div className="flex-grow flex flex-col justify-between space-y-2">
+      <div className="flex-grow flex flex-col justify-start space-y-2">
         {/* ส่วนของการแสดง Top 5 ยังคงเหมือนเดิม */}
         {data.map((branch, index) => (
           <ParkingAlertCard

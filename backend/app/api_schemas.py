@@ -45,6 +45,7 @@ class ParkingKpiData(BaseModel):
     ongoingViolations: int
     avgViolationDuration: float
     avgNormalParkingTime: float
+    onlineBranches: int
 
 class ViolationChartDataPoint(BaseModel):
     """ตรงกับ ChartPoint { label: '...', value: ... }"""

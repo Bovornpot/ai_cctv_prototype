@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional, List
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from fastapi import Query
 import math
 
@@ -22,7 +22,7 @@ def get_parking_violations(
      ):
     query = db.query(database.DBParkingViolation)
     if branch_id:
-        query = query.filter(database.DBParkingViolation.branch_id == branch_id)
+        query = query.filter(database.DBParkingViolation.branch_id.startswith(branch_id))
     return query.offset(skip).limit(limit).all()
 
 #--- ข้อมูลสรุป KPI Card, Chart, Top Branch---#
@@ -35,7 +35,8 @@ def get_violation_summary(
     db: Session = Depends(get_db),
     branch_id: Optional[str] = None,
     start_date: Optional[date] = None,
-    end_date: Optional[date] = None
+    end_date: Optional[date] = None,
+    group_by_unit: str = 'day'
 ):
     """
     Endpoint นี้จะคำนวณและรวบรวมข้อมูลสรุปทั้งหมดสำหรับหน้า Parking Violations:
@@ -54,7 +55,7 @@ def get_violation_summary(
 
     # เงื่อนไข .filter() เข้าไปใน Base Query ถ้ามีการส่งค่ามา
     if branch_id:
-        base_query = base_query.filter(database.DBParkingViolation.branch_id == branch_id)
+        base_query = base_query.filter(database.DBParkingViolation.branch_id.startswith(branch_id))
     if start_date:
         base_query = base_query.filter(database.DBParkingViolation.timestamp >= start_date)
     if end_date:
@@ -63,6 +64,15 @@ def get_violation_summary(
         base_query = base_query.filter(database.DBParkingViolation.timestamp < (end_date + timedelta(days=1)))
 
     # --- 1. คำนวณข้อมูลสำหรับ KPI Cards ---
+
+    total_unique_branches = base_query.with_entities(func.count(database.DBParkingViolation.branch_id.distinct()))\
+        .scalar() or 0
+    
+    # online_threshold = datetime.utcnow() - timedelta(minutes=15)
+    # online_branches_count = db.query(func.count(database.DBParkingViolation.branch_id.distinct()))\
+    #     .filter(database.DBParkingViolation.timestamp >= online_threshold)\
+    #     .scalar() or 0
+    
     total_violations = base_query.filter(database.DBParkingViolation.is_violation == True).count()
     ongoing_violations = base_query.filter(
         database.DBParkingViolation.is_violation == True,
@@ -78,46 +88,78 @@ def get_violation_summary(
         ongoingViolations=ongoing_violations,
         total_parking_sessions=total_sessions,
         avgViolationDuration=round(avg_duration_violation, 1),
-        avgNormalParkingTime=round(avg_duration_normal, 1)
+        avgNormalParkingTime=round(avg_duration_normal, 1),
+        onlineBranches=total_unique_branches
     )
 
     # --- 2. คำนวณข้อมูลสำหรับ Violations Chart (ตัวอย่าง: จัดกลุ่มรายวัน 30 วันล่าสุด) ---
 
+    chart_base_query = base_query.filter(database.DBParkingViolation.is_violation == True)
+
     chart_data = []
     
-    # 1. ตรวจสอบว่าเป็น Single Day หรือไม่
-    if start_date == end_date:
-        # ถ้าใช่, ให้ Group by รายชั่วโมง
-        hourly_results_db = base_query.with_entities(
-            func.strftime('%H', database.DBParkingViolation.timestamp).label("hour"),
+    if group_by_unit == 'hour':
+        results_db = chart_base_query.with_entities(
+            func.strftime('%H', database.DBParkingViolation.timestamp).label("label"),
             func.count(database.DBParkingViolation.id).label("count")
-        ).group_by("hour").all()
-        
-        # สร้าง Dictionary เพื่อให้ง่ายต่อการค้นหา
-        results_map = {int(row.hour): row.count for row in hourly_results_db}
-
-        # สร้างข้อมูลครบ 24 ชั่วโมง แล้วเติมค่าจาก DB
+        ).group_by("label").all()
+        results_map = {f"{int(r.label):02d}:00": r.count for r in results_db}
         for hour in range(24):
             hour_str = f"{hour:02d}:00"
-            count = results_map.get(hour, 0)
-            chart_data.append(api_schemas.ViolationChartDataPoint(label=hour_str, value=count))
+            chart_data.append(api_schemas.ViolationChartDataPoint(label=hour_str, value=results_map.get(hour_str, 0)))
 
-    else:
-        # ถ้าไม่ใช่, ให้ Group by รายวัน
-        daily_results_db = base_query.with_entities(
-            func.date(database.DBParkingViolation.timestamp).label("date"),
+    elif group_by_unit == 'day':
+        results_db = chart_base_query.with_entities(
+            func.date(database.DBParkingViolation.timestamp).label("label"),
             func.count(database.DBParkingViolation.id).label("count")
-        ).group_by("date").all()
-
-        results_map = {str(row.date): row.count for row in daily_results_db}
-        
-        # สร้างข้อมูลครบทุกวันในช่วงที่เลือก แล้วเติมค่าจาก DB
+        ).group_by("label").all()
+        results_map = {str(r.label): r.count for r in results_db}
         current_date = start_date
         while current_date <= end_date:
             date_str = current_date.strftime("%Y-%m-%d")
-            count = results_map.get(date_str, 0)
-            chart_data.append(api_schemas.ViolationChartDataPoint(label=date_str, value=count))
-            current_date += timedelta(days=1)   
+            chart_data.append(api_schemas.ViolationChartDataPoint(label=date_str, value=results_map.get(date_str, 0)))
+            current_date += timedelta(days=1)
+            
+    elif group_by_unit == 'week':
+        # ใช้ %Y-%W สำหรับ SQLite เพื่อให้ได้ 'ปี-เลขสัปดาห์'
+        results_db = chart_base_query.with_entities(
+            func.strftime('%Y-%W', database.DBParkingViolation.timestamp).label("label"),
+            func.count(database.DBParkingViolation.id).label("count")
+        ).group_by("label").all()
+        results_map = {r.label: r.count for r in results_db}
+        
+        current_date = start_date
+        while current_date <= end_date:
+            week_label = current_date.strftime("%Y-%W")
+            # เพิ่มข้อมูลสัปดาห์เข้าไปถ้ายังไม่มี
+            if not any(d.label == week_label for d in chart_data):
+                chart_data.append(api_schemas.ViolationChartDataPoint(label=week_label, value=results_map.get(week_label, 0)))
+            # เลื่อนไปสัปดาห์ถัดไป
+            current_date += timedelta(days=7)
+
+    elif group_by_unit == 'month':
+        # 1. ดึงข้อมูลจริงจาก DB
+        results_db = chart_base_query.with_entities(
+            func.strftime('%Y-%m', database.DBParkingViolation.timestamp).label("label"),
+            func.count(database.DBParkingViolation.id).label("count")
+        ).group_by("label").all()
+        results_map = {r.label: r.count for r in results_db}
+        
+        # 2. สร้างข้อมูลเปล่าสำหรับทุกเดือนในช่วงที่เลือก
+        current_year = start_date.year
+        current_month = start_date.month
+        
+        # วนลูปจนกว่าจะเลย end_date
+        while date(current_year, current_month, 1) <= end_date:
+            month_label = f"{current_year}-{current_month:02d}"
+            # เติมข้อมูลจาก DB หรือใส่ 0 ถ้าไม่มี
+            chart_data.append(api_schemas.ViolationChartDataPoint(label=month_label, value=results_map.get(month_label, 0)))
+
+            # เลื่อนไปยังเดือนถัดไป
+            current_month += 1
+            if current_month > 12:
+                current_month = 1
+                current_year += 1
 
     # --- 3. คำนวณ Top 5 Branches ---
     top_branches_query_base = db.query(database.DBParkingViolation)
@@ -169,12 +211,16 @@ def get_all_violating_branches(
         from datetime import timedelta
         query_base = query_base.filter(database.DBParkingViolation.timestamp < (end_date + timedelta(days=1)))
     
+    subquery = query_base.group_by(
+        database.DBParkingViolation.branch_id
+    ).subquery()
+
     # Query เพื่อนับจำนวนกลุ่มทั้งหมด (ก่อน limit)
     total_items_query = query_base.group_by(
         database.DBParkingViolation.branch, 
         database.DBParkingViolation.branch_id
     )
-    total_items = total_items_query.count()
+    total_items = db.query(func.count(subquery.c.id)).scalar()
     total_pages = math.ceil(total_items / limit)
 
     # Query เพื่อดึงข้อมูลของหน้านั้นๆ
@@ -223,7 +269,7 @@ def get_violation_events(
     query = db.query(database.DBParkingViolation)
 
     if branch_id:
-        query = query.filter(database.DBParkingViolation.branch_id == branch_id)
+        query = query.filter(database.DBParkingViolation.branch_id.startswith(branch_id))
     if start_date:
         query = query.filter(database.DBParkingViolation.timestamp >= start_date)
     if end_date:

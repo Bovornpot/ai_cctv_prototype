@@ -5,6 +5,7 @@ import { ParkingViolationEvent, ViolationSummaryResponse } from '../types/parkin
 import { fetchViolationSummary, fetchViolationEvents } from '../api/parkingApiService';
 import { TimeSelection } from '../types/time';
 import { getDateRangeFromSelection } from '../utils/dateUtils';
+import { ChartGroupByUnit } from '../api/parkingApiService';
 
 // Components
 import ViolationsTable from '../components/parking/ViolationsTable';
@@ -50,11 +51,28 @@ const ParkingViolationDetailsPage: React.FC<ParkingViolationDetailsPageProps> = 
         // เตรียมค่า Filters ที่จะส่งไป API
         const { startDate, endDate } = getDateRangeFromSelection(timeSelection);
 
+        const toYYYYMMDD = (date: Date) => {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, '0'); // +1 เพราะ getMonth() เริ่มจาก 0
+          const d = String(date.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        };
+
+        let groupByUnit: ChartGroupByUnit = 'day'; // ค่าเริ่มต้น
+        if (timeSelection.activeTab === 'Day' && timeSelection.mode === 'single') {
+          groupByUnit = 'hour';
+        } else if (timeSelection.activeTab === 'Week' && timeSelection.mode === 'range') {
+          groupByUnit = 'week';
+        } else if (timeSelection.activeTab === 'Month' && timeSelection.mode === 'range') {
+          groupByUnit = 'month';
+        }
+
         const filters = {
           branchId: branchQuery || undefined,
-          startDate: startDate.toISOString().split('T')[0], // ใช้ startDate ที่คำนวณได้
-          endDate: endDate.toISOString().split('T')[0],     // ใช้ endDate ที่คำนวณได้
+          startDate: toYYYYMMDD(startDate),
+          endDate: toYYYYMMDD(endDate),
           isViolationOnly: activeTab === 'violations',
+          groupByUnit: groupByUnit,
         };
 
         console.log("Sending filters to backend:", filters);
@@ -66,8 +84,8 @@ const ParkingViolationDetailsPage: React.FC<ParkingViolationDetailsPageProps> = 
         // เรียก API ทั้งสองตัวพร้อมกันโดยส่ง Filters ไปด้วย
 
         const [summary, paginatedEvents] = await Promise.all([
-          summaryPromise,
-          eventsPromise, 
+          fetchViolationSummary(filters),
+          fetchViolationEvents(currentPage, 20, filters),
         ]);
         
         setSummaryData(summary);

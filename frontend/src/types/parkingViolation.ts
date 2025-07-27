@@ -28,6 +28,7 @@ export interface ParkingKpiData {
   ongoingViolations: number;
   avgViolationDuration: number; // in minutes
   avgNormalParkingTime: number; // in minutes
+  onlineBranches: number;
 }
 
 export interface ViolationChartDataPoint {

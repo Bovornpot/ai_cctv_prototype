@@ -227,14 +227,17 @@ export function getDateRangeFromSelection(selection: TimeSelection): { startDate
       break;
       
     case 'Month':
-      if (selection.mode === 'range' && selection.startMonth && selection.endMonth) {
-        const startDate = new Date(selection.year, selection.startMonth - 1, 1);
-        const endDate = new Date(selection.year, selection.endMonth, 0); // วันสุดท้ายของเดือนสิ้นสุด
+      if (selection.mode === 'range' && selection.startMonth !== undefined && selection.endMonth !== undefined) {
+        // ไม่ต้อง - 1 เพราะ state เป็น 0-indexed อยู่แล้ว
+        const startDate = new Date(selection.year, selection.startMonth, 1);
+        // +1 เพื่อให้ได้เดือนถัดไป แล้วใช้วันที่ 0 เพื่อให้ได้วันสุดท้ายของเดือนปัจจุบัน
+        const endDate = new Date(selection.year, selection.endMonth + 1, 0); 
         return { startDate: startOfDay(startDate), endDate: endOfDay(endDate) };
       }
-       if (selection.mode === 'single' && selection.month) {
-         const startDate = new Date(selection.year, selection.month - 1, 1);
-         const endDate = new Date(selection.year, selection.month, 0); // วันสุดท้ายของเดือน
+       if (selection.mode === 'single' && selection.month !== undefined) {
+         // ไม่ต้อง - 1 เพราะ state เป็น 0-indexed อยู่แล้ว
+         const startDate = new Date(selection.year, selection.month, 1);
+         const endDate = new Date(selection.year, selection.month + 1, 0); 
          return { startDate: startOfDay(startDate), endDate: endOfDay(endDate) };
        }
        break;

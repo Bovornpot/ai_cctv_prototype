@@ -9,6 +9,7 @@ export const mockKpiData: ParkingKpiData = {
   ongoingViolations: 78,
   avgViolationDuration: 35,
   avgNormalParkingTime: 12,
+  onlineBranches: 5
 };
 
 // --- Data for Violations Table ---

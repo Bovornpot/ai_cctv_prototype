@@ -9,12 +9,16 @@ import {
 // อ่าน URL ของ Backend จาก .env
 const API_BASE_URL = process.env.REACT_APP_API_URL;
 
+// สร้าง Type สำหรับหน่วยการจัดกลุ่ม
+export type ChartGroupByUnit = 'hour' | 'day' | 'week' | 'month';
+
 // สร้าง Interface สำหรับ Filters เพื่อความปลอดภัยของ Type
 export interface ViolationFilters {
   branchId?: string;
   startDate?: string; // Format: YYYY-MM-DD
   endDate?: string;   // Format: YYYY-MM-DD
   isViolationOnly?: boolean;
+  groupByUnit?: ChartGroupByUnit;
 }
 
 /**
@@ -27,6 +31,7 @@ export const fetchViolationSummary = async (filters: ViolationFilters): Promise<
   if (filters.branchId) params.append('branch_id', filters.branchId);
   if (filters.startDate) params.append('start_date', filters.startDate);
   if (filters.endDate) params.append('end_date', filters.endDate);
+  if (filters.groupByUnit) params.append('group_by_unit', filters.groupByUnit); 
 
   const queryString = params.toString();
 
