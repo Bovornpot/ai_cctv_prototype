@@ -1,15 +1,14 @@
 // frontend/src/components/parking/ViolationsTable.tsx
 
-import React, { useState,useMemo } from 'react';
+import React, { useState } from 'react';
 import { ParkingViolationEvent, ViolationStatus } from '../../types/parkingViolation';
 import './ViolationsTable.css'; // เราจะสร้างไฟล์ CSS นี้ในขั้นตอนถัดไป
 
 // Helper component สำหรับแสดงสถานะพร้อมสี
 const StatusBadge: React.FC<{ status: ViolationStatus }> = ({ status }) => {
   const statusInfo = {
-    Ongoing: { text: 'Ongoing', colorClass: 'status-ongoing' },
-    Completed: { text: 'Completed', colorClass: 'status-completed' },
-    Acknowledged: { text: 'Acknowledged', colorClass: 'status-acknowledged' },
+    Violate: { text: 'Violate', colorClass: 'status-violate' },
+    Normal: { text: 'Normal', colorClass: 'status-normal' },
   };
 
   const { text, colorClass } = statusInfo[status];
@@ -47,7 +46,7 @@ const EvidenceModal: React.FC<{ violation: ParkingViolationEvent; onClose: () =>
                 </div>
                 <div className="modal-body">
                     <div className="modal-image-container">
-                        <img src={violation.evidenceImageUrl} alt={`Evidence for vehicle ${violation.vehicleId}`} />
+                        <img src={`data:image/jpeg;base64,${violation.imageBase64}`} alt={`Evidence for vehicle ${violation.vehicleId}`} />
                     </div>
                     <div className="modal-details">
                         <p><strong>Vehicle ID:</strong> <span className="font-mono">{violation.vehicleId}</span></p>
@@ -64,57 +63,55 @@ const EvidenceModal: React.FC<{ violation: ParkingViolationEvent; onClose: () =>
     );
 };
 
+type ActiveTab = 'all' | 'violations';
 interface ViolationsTableProps {
   violations: ParkingViolationEvent[];
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  activeTab: ActiveTab;
+  onTabChange: (tab: ActiveTab) => void;
 }
 
-const ViolationsTable: React.FC<ViolationsTableProps> = ({ violations }) => {
-  const [activeTab, setActiveTab] = useState<'violation' | 'all'>('violation');
+const ViolationsTable: React.FC<ViolationsTableProps> = ({ violations, currentPage, totalPages, onPageChange, activeTab ,onTabChange }) => {
+//   const [activeTab, setActiveTab] = useState<'all' | 'violations'>('violations');
   const [selectedViolation, setSelectedViolation] = useState<ParkingViolationEvent | null>(null);
   
   // กรองข้อมูลตาม Tab ที่เลือก
-  const sortedAndFilteredViolations = useMemo(() => {
-        let filtered = violations;
-
-        // ขั้นตอนที่ 1: กรองข้อมูลตาม Tab ที่เลือก
-        if (activeTab === 'violation') {
-            filtered = violations.filter(v => 
-                v.status === 'Ongoing' && v.durationMinutes > 15
-            );
-        }
-
-        // ขั้นตอนที่ 2: เรียงลำดับข้อมูลจากใหม่ไปเก่า (ใช้กับทุก Tab)
-        // สร้าง Array ใหม่ด้วย [...filtered] ก่อน sort เพื่อไม่ให้กระทบ state เดิม
-        return [...filtered].sort((a, b) => 
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
-
-  }, [violations, activeTab]); // คำนวณใหม่เมื่อ violations หรือ activeTab เปลี่ยน
+//   const filteredViolations = useMemo(() => {
+//     if (activeTab === 'violations') {
+//       // กรองเฉพาะรายการที่เป็น Violation
+//       return violations.filter(v => v.isViolation);
+//     }
+//     // ถ้าเป็น 'all' ให้แสดงทั้งหมด
+//     return violations;
+//   }, [violations, activeTab]); // คำนวณใหม่เมื่อ violations หรือ activeTab เปลี่ยน
 
   return (
         <div>
             {/* --- Tab buttons (เปลี่ยนชื่อ Tab) --- */}
             <div className="tabs-container">
                 <button
-                    className={`tab-button ${activeTab === 'violation' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('violation')}
+                    className={`tab-button ${activeTab === 'violations' ? 'active' : ''}`}
+                    onClick={() => onTabChange('violations')}
                 >
                     Active Violations
                 </button>
                 <button
                     className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('all')}
+                    onClick={() => onTabChange('all')}
                 >
                     Joined Parking Sessions
                 </button>
             </div>
 
             {/* --- Table (ปรับปรุงคอลัมน์) --- */}
-            {sortedAndFilteredViolations.length > 0 ? (
+            {violations.length > 0 ? (
                 <div className="table-container">
                     <table className="violations-table">
                         <thead>
                             <tr>
+                                <th>ลำดับ</th>    
                                 <th>Status</th>
                                 <th>Vehicle ID</th>
                                 <th>Branch</th>
@@ -128,20 +125,21 @@ const ViolationsTable: React.FC<ViolationsTableProps> = ({ violations }) => {
                         </thead>
                         <tbody>
                             {/* ใช้ข้อมูลที่ผ่านการกรองและเรียงลำดับแล้ว */}
-                            {sortedAndFilteredViolations.map((v) => (
-                                <tr key={v.id}>
-                                    <td><StatusBadge status={v.status} /></td>
-                                    <td className="font-mono">{v.vehicleId}</td>
-                                    <td>{v.branch.name}</td>
-                                    <td>{v.branch.id}</td>
-                                    <td>{v.camera.id}</td>
-                                    <td>{formatDateTime(v.entryTime)}</td>
-                                    <td>{formatDateTime(v.exitTime)}</td>
-                                    <td>{v.durationMinutes.toFixed(0)}</td>
+                            {violations.map((violation, index) => (
+                                <tr key={violation.id}>
+                                    <td>{(currentPage - 1) * 20 + index + 1}</td>
+                                    <td><StatusBadge status={violation.status} /></td>
+                                    <td className="font-mono">{violation.vehicleId}</td>
+                                    <td>{violation.branch.name}</td>
+                                    <td>{violation.branch.id}</td>
+                                    <td>{violation.camera.id}</td>
+                                    <td>{formatDateTime(violation.entryTime)}</td>
+                                    <td>{formatDateTime(violation.exitTime)}</td>
+                                    <td>{violation.durationMinutes.toFixed(0)}</td>
                                     <td>
                                         <button 
                                             className="action-button view-button"
-                                            onClick={() => setSelectedViolation(v)}
+                                            onClick={() => setSelectedViolation(violation)}
                                         >
                                             View
                                         </button>
@@ -150,6 +148,28 @@ const ViolationsTable: React.FC<ViolationsTableProps> = ({ violations }) => {
                             ))}
                         </tbody>
                     </table>
+                    {/* 2. เพิ่มส่วนของ Pagination UI */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between p-4 border-t border-gray-200">
+                        <button
+                            onClick={() => onPageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Previous
+                        </button>
+                        <span className="text-sm text-gray-700">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            onClick={() => onPageChange(currentPage + 1)}
+                            disabled={currentPage >= totalPages}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next
+                        </button>
+                        </div>
+                    )}
                 </div>
             ) : (
               <div className="empty-state-container">

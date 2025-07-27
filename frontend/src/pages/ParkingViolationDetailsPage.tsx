@@ -1,7 +1,10 @@
 // frontend/src/pages/ParkingViolationDetailsPage.tsx
 
-import React, { useState, useEffect, useCallback,useMemo } from 'react';
-import { ParkingViolationEvent, ParkingKpiData } from '../types/parkingViolation';
+import React, { useState, useEffect } from 'react';
+import { ParkingViolationEvent, ViolationSummaryResponse } from '../types/parkingViolation';
+import { fetchViolationSummary, fetchViolationEvents } from '../api/parkingApiService';
+import { TimeSelection } from '../types/time';
+import { getDateRangeFromSelection } from '../utils/dateUtils';
 
 // Components
 import ViolationsTable from '../components/parking/ViolationsTable';
@@ -9,115 +12,139 @@ import KpiCards from '../components/parking/KpiCards';
 import ViolationsChart from '../components/parking/ViolationsChart';
 import TopBranchesList from '../components/parking/TopBranchesList';
 
-import { TimeSelection } from '../types/time';
-
-import { 
-  mockKpiData, 
-  mockViolationData,
-  mockTopBranches,
-  mockSingleDayChartData,
-  mockRangeDayChartData,
-  mockSingleWeekChartData, 
-  mockRangeWeekChartData,
-  mockSingleMonthChartData,
-  mockRangeMonthChartData
-} from '../api/mockParkingData';
+// import { 
+//   mockKpiData, 
+//   mockViolationData,
+//   mockTopBranches,
+//   mockSingleDayChartData,
+//   mockRangeDayChartData,
+//   mockSingleWeekChartData, 
+//   mockRangeWeekChartData,
+//   mockSingleMonthChartData,
+//   mockRangeMonthChartData
+// } from '../api/mockParkingData';
 
 interface ParkingViolationDetailsPageProps {
   timeSelection: TimeSelection;
   branchQuery: string;
 }
 
+type ActiveTab = 'all' | 'violations';
+
 const ParkingViolationDetailsPage: React.FC<ParkingViolationDetailsPageProps> = ({ timeSelection, branchQuery }) => {
-  const [violations, setViolations] = useState<ParkingViolationEvent[]>([]);
-  const [kpiData, setKpiData] = useState<ParkingKpiData | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // Logic การดึงข้อมูลจะใช้ข้อมูลที่ import เข้ามา
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    console.log('Fetching data with new filters:');
-    console.log('Time Selection:', timeSelection);
-    console.log('Branch Query:', branchQuery);
-    // console.log('ParkingViolationDetailsPage is fetching data with:', timeSelection);
-    
-    setTimeout(() => {
-      setViolations(mockViolationData);
-      setKpiData(mockKpiData);
-      setLoading(false);
-    }, 500);
-  }, [timeSelection, branchQuery]);
+  const [summaryData, setSummaryData] = useState<ViolationSummaryResponse | null>(null);
+  const [eventsData, setEventsData] = useState<ParkingViolationEvent[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('violations'); // Default เป็น violations
 
   useEffect(() => {
+    // ฟังก์ชันสำหรับดึงข้อมูล โดยใช้ค่า filter ล่าสุด
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // เตรียมค่า Filters ที่จะส่งไป API
+        const { startDate, endDate } = getDateRangeFromSelection(timeSelection);
+
+        const filters = {
+          branchId: branchQuery || undefined,
+          startDate: startDate.toISOString().split('T')[0], // ใช้ startDate ที่คำนวณได้
+          endDate: endDate.toISOString().split('T')[0],     // ใช้ endDate ที่คำนวณได้
+          isViolationOnly: activeTab === 'violations',
+        };
+
+        console.log("Sending filters to backend:", filters);
+
+        // ข้อมูล summary จะดึงเหมือนเดิม ไม่เกี่ยวกับ Tab
+        const summaryPromise = fetchViolationSummary({ branchId: filters.branchId, startDate: filters.startDate, endDate: filters.endDate });
+        // แต่ข้อมูล events จะดึงตาม Tab
+        const eventsPromise = fetchViolationEvents(currentPage, 20, filters);
+        // เรียก API ทั้งสองตัวพร้อมกันโดยส่ง Filters ไปด้วย
+
+        const [summary, paginatedEvents] = await Promise.all([
+          summaryPromise,
+          eventsPromise, 
+        ]);
+        
+        setSummaryData(summary);
+        // อัปเดต events และ totalPages
+        setEventsData(paginatedEvents.events);
+        setTotalPages(paginatedEvents.total_pages);
+        
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+        setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+      } finally {
+        setIsLoading(false);
+      }
+    };
     fetchData();
-  }, [fetchData]);
+  }, [timeSelection, branchQuery, currentPage, activeTab]);
 
-  const { chartData, chartTitle } = useMemo(() => {
-    // นี่คือ Logic ที่เราจะแทนที่ด้วย API call เดียวในอนาคต
-    switch (timeSelection.activeTab) {
-      case 'Day':
-        return timeSelection.mode === 'range' 
-          ? { chartData: mockRangeDayChartData, chartTitle: 'สถิติการละเมิดรายวัน' }
-          : { chartData: mockSingleDayChartData, chartTitle: 'สถิติการละเมิดรายชั่วโมง (ใน 1 วัน)' };
-      
-      case 'Week':
-        return timeSelection.mode === 'range'
-          ? { chartData: mockRangeWeekChartData, chartTitle: 'สถิติการละเมิดรายสัปดาห์' }
-          : { chartData: mockSingleWeekChartData, chartTitle: 'สถิติการละเมิดรายวัน (ในสัปดาห์)' };
-
-      case 'Month':
-        return timeSelection.mode === 'range'
-          ? { chartData: mockRangeMonthChartData, chartTitle: 'สถิติการละเมิดรายเดือน' }
-          : { chartData: mockSingleMonthChartData, chartTitle: 'สถิติการละเมิดรายวัน (ในเดือน)' };
-
-      default:
-        return { chartData: [], chartTitle: 'สถิติการละเมิด' };
+  // ฟังก์ชันสำหรับจัดการการกดปุ่ม
+  const handlePageChange = (newPage: number) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      setCurrentPage(newPage);
     }
-  }, [timeSelection]); // คำนวณใหม่ทุกครั้งที่ timeSelection เปลี่ยน
+  };
 
-  if (loading) {
+  // สร้างฟังก์ชันสำหรับเปลี่ยน Tab และรีเซ็ตหน้าเป็น 1
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    setCurrentPage(1); // กลับไปหน้า 1 เสมอเมื่อเปลี่ยน Tab
+  };
+
+  if (isLoading) {
     return (
-        <div className="flex items-center justify-center h-full py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            <p className="ml-4 text-gray-600">กำลังโหลดข้อมูล...</p>
-        </div>
+      <div className="flex items-center justify-center h-full py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <p className="ml-4 text-gray-600">กำลังโหลดข้อมูลตามเงื่อนไข...</p>
+      </div>
     );
   }
 
+  if (error) {
+    return <div className="text-center py-20 text-red-500 font-semibold">{error}</div>;
+  }
 
   return (
     <div className="space-y-6">
-      {/* <ViolationFilters onFilterChange={handleFilterChange} /> */}
-
-      {loading ? (
-        <div className="flex items-center justify-center h-full py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          <p className="ml-4 text-gray-600">กำลังโหลดข้อมูล...</p>
-        </div>
-      ) : kpiData ? (
+      {summaryData ? (
+        // ถ้ามี summaryData ให้แสดงผลข้อมูลทั้งหมด
         <>
-          <KpiCards data={kpiData} />
+          <KpiCards data={summaryData.kpi} />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">{chartTitle}</h3>
-              <ViolationsChart data={chartData} />
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">สถิติการละเมิด</h3>
+              <ViolationsChart data={summaryData.chart_data} />
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow flex flex-col h-full">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">Top 5 Violating Branches</h3>
-              <TopBranchesList data={mockTopBranches} />
+              {/* <h3 className="text-lg font-semibold mb-4 text-gray-800">Top 5 Violating Branches</h3> */}
+              <TopBranchesList data={summaryData.top_branches} timeSelection={timeSelection} />
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <ViolationsTable violations={violations} />
+            <ViolationsTable 
+            violations={eventsData}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            />
           </div>
-
         </>
       ) : (
+        // ถ้าไม่มี summaryData (หลังจากโหลดเสร็จแล้ว) ให้แสดงว่าไม่พบข้อมูล
         <div className="text-center py-20">
-          <p className="text-gray-500">No data to display.</p>
+          <p className="text-gray-500">ไม่พบข้อมูลที่จะแสดงผลตามเงื่อนไขที่เลือก</p>
         </div>
       )}
     </div>

@@ -136,7 +136,7 @@ export const getWeekRangeFromWeekNumber = (year: number, week: number) => {
 export const formatTimeSelectionDisplay = (selection: TimeSelection): string => {
     const { activeTab, mode } = selection;
     const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    // const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
     if (activeTab === 'Day') {
         if (selection.startDate.toDateString() === selection.endDate.toDateString()) {
@@ -183,6 +183,68 @@ export const generateWeekGrid = (year: number): number[] => {
     return Array.from({ length: week }, (_, i) => i + 1);
 };
 
+/**
+ * ฟังก์ชันสำหรับคำนวณ startDate และ endDate จาก TimeSelection object
+ * เพื่อนำไปใช้กรองข้อมูลใน API
+ * @param selection - The TimeSelection object from the UI
+ * @returns An object with startDate and endDate as Date objects
+ */
+export function getDateRangeFromSelection(selection: TimeSelection): { startDate: Date; endDate: Date } {
+  // Helper ภายในสำหรับปรับเวลาให้เป็นจุดเริ่มต้นและสิ้นสุดของวัน
+  const startOfDay = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+  const endOfDay = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  };
+
+  switch (selection.activeTab) {
+    case 'Day':
+      // สำหรับ Day, เราใช้ startDate และ endDate ที่มีอยู่แล้วได้เลย
+      if (selection.startDate && selection.endDate) {
+        return { 
+          startDate: startOfDay(selection.startDate), 
+          endDate: endOfDay(selection.endDate) 
+        };
+      }
+      break;
+
+    case 'Week':
+      // ใช้ฟังก์ชัน getWeekRangeFromWeekNumber ที่คุณมีอยู่แล้ว
+      if (selection.mode === 'range' && selection.startWeek && selection.endWeek) {
+        const { start } = getWeekRangeFromWeekNumber(selection.year, selection.startWeek);
+        const { end } = getWeekRangeFromWeekNumber(selection.year, selection.endWeek);
+        return { startDate: startOfDay(start), endDate: endOfDay(end) };
+      }
+      if (selection.mode === 'single' && selection.week) {
+        const { start, end } = getWeekRangeFromWeekNumber(selection.year, selection.week);
+        return { startDate: startOfDay(start), endDate: endOfDay(end) };
+      }
+      break;
+      
+    case 'Month':
+      if (selection.mode === 'range' && selection.startMonth && selection.endMonth) {
+        const startDate = new Date(selection.year, selection.startMonth - 1, 1);
+        const endDate = new Date(selection.year, selection.endMonth, 0); // วันสุดท้ายของเดือนสิ้นสุด
+        return { startDate: startOfDay(startDate), endDate: endOfDay(endDate) };
+      }
+       if (selection.mode === 'single' && selection.month) {
+         const startDate = new Date(selection.year, selection.month - 1, 1);
+         const endDate = new Date(selection.year, selection.month, 0); // วันสุดท้ายของเดือน
+         return { startDate: startOfDay(startDate), endDate: endOfDay(endDate) };
+       }
+       break;
+  }
+  
+
+  // กรณีที่ไม่ตรงเงื่อนไขใดๆ ให้คืนค่าเป็นช่วงของวันนี้
+  const now = new Date();
+  return { startDate: startOfDay(now), endDate: endOfDay(now) };
+}
 
 
 

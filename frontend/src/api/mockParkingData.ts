@@ -14,70 +14,70 @@ export const mockKpiData: ParkingKpiData = {
 // --- Data for Violations Table ---
 export const mockViolationData: ParkingViolationEvent[] = [
   {
-    id: 1, status: 'Ongoing', timestamp: '2025-07-24T11:10:00Z',
+    id: 1, status: 'Violate', timestamp: '2025-07-24T11:10:00Z',
     branch: { id: 'BKK01', name: 'สาขาสุขุมวิท' }, camera: { id: 'Cam01' },
     vehicleId: 'กท-1234', entryTime: '2025-07-24T08:30:00Z', exitTime: null,
-    durationMinutes: 160, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
+    durationMinutes: 160, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
   },
   {
-    id: 2, status: 'Ongoing', timestamp: '2025-07-24T11:05:00Z',
+    id: 2, status: 'Violate', timestamp: '2025-07-24T11:05:00Z',
     branch: { id: 'BKK02', name: 'สาขาลาดพร้าว' }, camera: { id: 'Cam05' },
     vehicleId: 'ขข-5678', entryTime: '2025-07-24T10:45:00Z', exitTime: null,
-    durationMinutes: 20, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK02'
+    durationMinutes: 20, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK02'
   },
   {
-    id: 3, status: 'Completed', timestamp: '2025-07-23T15:00:00Z',
+    id: 3, status: 'Normal', timestamp: '2025-07-23T15:00:00Z',
     branch: { id: 'BKK01', name: 'สาขาสุขุมวิท' }, camera: { id: 'Cam02' },
     vehicleId: 'คค-9012', entryTime: '2025-07-23T14:00:00Z', exitTime: '2025-07-23T15:00:00Z',
-    durationMinutes: 60, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
+    durationMinutes: 60, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
   },
   {
-    id: 4, status: 'Acknowledged', timestamp: '2025-07-10T11:45:00Z',
+    id: 4, status: 'Violate', timestamp: '2025-07-10T11:45:00Z',
     branch: { id: 'BKK03', name: 'สาขาปิ่นเกล้า' }, camera: { id: 'Cam02' },
     vehicleId: 'คค-9012', entryTime: '2025-07-10T10:00:00Z', exitTime: '2025-07-10T11:45:00Z',
-    durationMinutes: 105, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/150'
+    durationMinutes: 105, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/150'
   },
   {
-    id: 5, status: 'Ongoing', timestamp: '2025-07-11T17:30:00Z',
+    id: 5, status: 'Normal', timestamp: '2025-07-11T17:30:00Z',
     branch: { id: 'BKK01', name: 'สาขาสุขุมวิท' }, camera: { id: 'Cam01' },
     vehicleId: 'กท-1234', entryTime: '2025-07-11T14:30:00Z', exitTime: null,
-    durationMinutes: 180, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/150'
+    durationMinutes: 180, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/150'
   },
   {
-    id: 6, status: 'Completed', timestamp: '2025-07-11T15:10:00Z',
+    id: 6, status: 'Normal', timestamp: '2025-07-11T15:10:00Z',
     branch: { id: 'BKK02', name: 'สาขาลาดพร้าว' }, camera: { id: 'Cam05' },
     vehicleId: 'ขข-5678', entryTime: '2025-07-11T13:00:00Z', exitTime: '2025-07-11T15:10:00Z',
-    durationMinutes: 130, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/150'
+    durationMinutes: 130, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/150'
   },
   {
-    id: 7, status: 'Acknowledged', timestamp: '2025-07-10T11:45:00Z',
+    id: 7, status: 'Normal', timestamp: '2025-07-10T11:45:00Z',
     branch: { id: 'BKK03', name: 'สาขาปิ่นเกล้า' }, camera: { id: 'Cam02' },
     vehicleId: 'คค-9012', entryTime: '2025-07-10T10:00:00Z', exitTime: '2025-07-10T11:45:00Z',
-    durationMinutes: 105, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/150'
+    durationMinutes: 105, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/150'
   },
   {
-    id: 8, status: 'Completed', timestamp: '2025-07-23T15:00:00Z',
+    id: 8, status: 'Normal', timestamp: '2025-07-23T15:00:00Z',
     branch: { id: 'BKK01', name: 'สาขาสุขุมวิท' }, camera: { id: 'Cam02' },
     vehicleId: 'คค-9012', entryTime: '2025-07-23T14:00:00Z', exitTime: '2025-07-23T15:00:00Z',
-    durationMinutes: 60, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
+    durationMinutes: 60, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
   },
   {
-    id: 9, status: 'Completed', timestamp: '2025-07-23T15:00:00Z',
+    id: 9, status: 'Normal', timestamp: '2025-07-23T15:00:00Z',
     branch: { id: 'BKK01', name: 'สาขาสุขุมวิท' }, camera: { id: 'Cam02' },
     vehicleId: 'คค-9012', entryTime: '2025-07-23T14:00:00Z', exitTime: '2025-07-23T15:00:00Z',
-    durationMinutes: 60, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
+    durationMinutes: 60, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
   },
    {
-    id: 10, status: 'Ongoing', timestamp: '2025-07-24T11:10:00Z',
+    id: 10, status: 'Violate', timestamp: '2025-07-24T11:10:00Z',
     branch: { id: 'BKK01', name: 'สาขาสุขุมวิท' }, camera: { id: 'Cam01' },
     vehicleId: 'กท-1234', entryTime: '2025-07-24T08:30:00Z', exitTime: null,
-    durationMinutes: 160, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
+    durationMinutes: 160, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK01'
   },
   {
-    id: 11, status: 'Ongoing', timestamp: '2025-07-24T11:05:00Z',
+    id: 11, status: 'Violate', timestamp: '2025-07-24T11:05:00Z',
     branch: { id: 'BKK02', name: 'สาขาลาดพร้าว' }, camera: { id: 'Cam05' },
     vehicleId: 'ขข-5678', entryTime: '2025-07-24T10:45:00Z', exitTime: null,
-    durationMinutes: 20, isViolation: true, total_parking_sessions: 10, evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK02'
+    durationMinutes: 20, isViolation: true, total_parking_sessions: 10, //evidenceImageUrl: 'https://via.placeholder.com/400x300.png?text=Violation+BKK02'
   },
 ];
 

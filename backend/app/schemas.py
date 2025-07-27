@@ -1,3 +1,6 @@
+# backend/app/schemas.py
+# --- Schemas for Internal Data & Ingestion ---
+
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
 from datetime import datetime
@@ -5,20 +8,25 @@ from datetime import datetime
 # --- Base Schema for all Analytics Events ---
 class BaseAnalyticsEvents(BaseModel):
     timestamp: datetime = Field(..., examples="2024-07-01T10:30:00Z")
+    branch: str = Field(..., examples="แผ่นดินทอง")
     branch_id: str = Field(..., examples="15517")
     camera_id: str =Field(..., examples="cam_01")
     event_type: str = Field(...,description= "Type of event (e.g., 'parking_violation', 'table_occupancy', 'chilled_basket_alert', 'beverage_stock_update')")
 
 class ParkingViolationData(BaseAnalyticsEvents):
-    event_type: Literal["parking_violation"] = "parking_violation"
-    vehicle_id: str = Field(...,examples="ABC-1234")
-    total_vehicle: int = Field(...,examples=5)
+    event_type: str
+    # vehicle_id: str = Field(...,examples="ABC-1234")
+    car_id: Optional[int] = Field(None, examples=101, description="Unique tracking ID for the vehicle.")
+    current_park: int = Field(...,examples=5)
     # parking_slot_id: str = Field(...,example="P01")
     entry_time: datetime= Field(...,examples="2024-07-01T10:00:00Z")
     exit_time: Optional[datetime]= Field(None,examples="2024-07-01T10:00:00Z")
     duration_minutes: float= Field(...,examples=20.5)
     is_violation: bool= Field(...,examples=True)
-    # violation_reason: Optional[str] = Field(None, example="parked_over_limit")
+    total_parking_sessions: int = Field(..., examples=15, description="Accumulated total parking sessions for this camera since start or last reset.")
+     # field สำหรับรับภาพ Base64 ###
+    image_base64: Optional[str] = Field(None, description="Base64 encoded snapshot of the violation.")
+
 class TableOccupancyData(BaseAnalyticsEvents):
     event_type: Literal["table_occupancy"] = "table_occupancy"
     table_id: str = Field(...,examples="T03")
@@ -48,18 +56,6 @@ class AnalyticsDataIn(BaseModel):
 class InferenceResultResponse(BaseModel):
     message: str = Field(..., examples="Parking violation data received.")
     id: int = Field(..., examples=123)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

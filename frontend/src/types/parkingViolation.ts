@@ -1,6 +1,6 @@
 // frontend/src/types/parkingViolation.ts
 
-export type ViolationStatus = 'Ongoing' | 'Completed' | 'Acknowledged';
+export type ViolationStatus = 'Violate' | 'Normal';
 
 export interface ParkingViolationEvent {
   id: number;
@@ -19,7 +19,7 @@ export interface ParkingViolationEvent {
   durationMinutes: number;
   isViolation: boolean;
   total_parking_sessions: number;
-  evidenceImageUrl?: string;
+  imageBase64?: string;
 }
 
 export interface ParkingKpiData {
@@ -29,3 +29,35 @@ export interface ParkingKpiData {
   avgViolationDuration: number; // in minutes
   avgNormalParkingTime: number; // in minutes
 }
+
+export interface ViolationChartDataPoint {
+  label: string; // ตรงกับ time_label ใน backend
+  value: number; // ตรงกับ violation_count ใน backend
+}
+
+export interface TopBranchData {
+  name: string;  // ตรงกับ branch_name
+  code: string;  // ตรงกับ branch_id
+  count: number; // ตรงกับ violation_count
+}
+
+export interface ViolationSummaryResponse {
+  kpi: ParkingKpiData;
+  chart_data: ViolationChartDataPoint[];
+  top_branches: TopBranchData[];
+}
+
+export interface PaginatedTopBranchResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  branches: TopBranchData[];
+}
+
+export interface PaginatedViolationEventsResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  events: ParkingViolationEvent[];
+}
+

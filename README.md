@@ -15,10 +15,19 @@ ai_cctv_prototype/
 │
 ├── backend/                # ส่วนของ Backend API (FastAPI)
 │   ├── app/
+│   │   ├── api/
+│   │   │   ├── deps.py                     # Dependencies ที่ใช้กับ FastAPI (เช่น get_db, verify_api_key)
+│   │   │   └── routers/                    # เก็บไฟล์ route ของแต่ละ feature (จัดเป็น modular structure)
+│   │   │       ├── parking.py              # Route สำหรับจัดการ Parking Violations เช่น GET/POST ข้อมูล
+│   │   │       ├── table.py                # Route สำหรับจัดการ Table Occupancy
+│   │   │       ├── chilled.py              # Route สำหรับจัดการ Chilled Basket Alerts
+│   │   │       └── analytics.py            # Route สำหรับรับข้อมูล inference ผลลัพธ์จาก AI (entry point หลักจาก AI pipeline)
+│   │   ├── core/
+│   │   │   └── config.py                   # การตั้งค่า configuration (อาจรวม env variables, secret, ฯลฯ)       
 │   │   ├── __init__.py     # ไฟล์เริ่มต้นของ Python package
 │   │   ├── main.py         # แอปพลิเคชัน FastAPI หลัก
-│   │   ├── database.py     # การดำเนินการกับฐานข้อมูล SQLite
-│   │   └── schemas.py      # Pydantic data models สำหรับ API
+│   │   ├── database.py     # การเชื่อมต่อฐานข้อมูล, ORM models, สร้าง tables
+│   │   └── schemas.py      # Pydantic schemas สำหรับ validate และ serialize/deserialize data
 │   └── requirements.txt    # รายการแพ็คเกจ Python ที่จำเป็นสำหรับ Backend
 │
 ├──frontend/
@@ -29,7 +38,8 @@ ai_cctv_prototype/
 │
 │    ├── src/                    # โฟลเดอร์หลักสำหรับ Source Code ของ React Application
 │    │   ├── api/                # สำหรับ Logic ในการเรียกใช้ Backend API หรือ Mock Data
-│    │   │   └── analytics.ts    # ไฟล์ที่รวมฟังก์ชันสำหรับดึงข้อมูล Dashboard (ปัจจุบันใช้ Mock Data)
+│    │   │   ├── analytics.ts    # ไฟล์ที่รวมฟังก์ชันสำหรับดึงข้อมูล Dashboard (ปัจจุบันใช้ Mock Data)
+│    │   │   └── mockParkingData.ts    # ไฟล์ที่รวมฟังก์ชันสำหรับดึงข้อมูล Dashboard (ปัจจุบันใช้ Mock Data)
 │    │   │
 │    │   ├── assets/             # (Optional) โฟลเดอร์สำหรับเก็บรูปภาพ, ไอคอน, ฟอนต์ หรือไฟล์ Media อื่นๆ ที่ใช้ใน UI
 │    │   │   └── icons/          # ตัวอย่างโฟลเดอร์สำหรับไอคอน (ปัจจุบันใช้ Lucide React เป็นหลัก)
@@ -39,7 +49,8 @@ ai_cctv_prototype/
 │    │   │   ├── common/         # Components ทั่วไปที่ใช้ได้หลายที่ เช่น ปุ่ม, การ์ดพื้นฐาน
 │    │   │   │   ├── StatCard.tsx     # การ์ดแสดงตัวเลขสถิติ (ปรับขนาด font และ padding ให้เล็กลง)
 │    │   │   │   ├── AlertCard.tsx    # การ์ดแสดงข้อมูล Alert (สาขาที่มี Alerts สูงสุด) (ปรับการจัดวางและขนาด font)
-│    │   │   │   └── SectionCard.tsx  # การ์ดสำหรับ Section ต่างๆ ใน Dashboard (มี Title และ Status)
+│    │   │   │   ├── SectionCard.tsx  # การ์ดสำหรับ Section ต่างๆ ใน Dashboard (มี Title และ Status)
+│    │   │   │   └── ParkingAlertCard.tsx  # การ์ดสำหรับ Section ต่างๆ ใน Parking Violation Detail 
 │    │   │   │
 │    │   │   ├── layout/         # Components ที่ใช้ในการจัดวางโครงสร้าง Layout ของหน้าจอหลัก
 │    │   │   │   ├── Header.tsx     # ส่วนหัวของ Dashboard (โลโก้, ชื่อแอป, Date/Branch/Search Controls)
@@ -69,8 +80,7 @@ ai_cctv_prototype/
 │    │   │
 │    │   ├── pages/              # สำหรับ Component ของหน้าจอหลักแต่ละหน้า
 │    │   │   ├── DashboardOverviewPage.tsx # หน้าจอ Dashboard Overview หลัก (จัดวาง Widgets ด้วย Grid, ลด gap)
-│    │   │   └── ParkingViolationDetailsPage.tsx # หน้ารายละเอียด Parking Violation
-│    │   │   
+│    │   │   └── ParkingViolationDetailsPage.tsx # หน้ารายละเอียด Parking Violation  
 │    │   │
 │    │   ├── styles/             # (Optional) ไฟล์ CSS/SCSS ทั่วไป, Global Styles, หรือ Themes (นอกเหนือจาก index.css)
 │    │   │   └── global.css 

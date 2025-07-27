@@ -79,9 +79,8 @@
 /* --- Status Badge Styles (เหมือนเดิม) --- */
 .status-badge-container { display: flex; align-items: center; gap: 8px; }
 .status-dot { width: 10px; height: 10px; border-radius: 50%; }
-.status-dot.status-ongoing { background-color: #dc3545; }
-.status-dot.status-completed { background-color: #28a745; }
-.status-dot.status-acknowledged { background-color: #6c757d; }
+.status-dot.status-violate { background-color: #dc3545; }
+.status-dot.status-normal { background-color: #28a745; }
 
 
 /* --- Modal Styles (เพิ่มใหม่) --- */
