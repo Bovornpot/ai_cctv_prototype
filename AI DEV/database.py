@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-DATABASE_URL = "sqlite:///./data/test.sqlite" #Path batabase data folder
+DATABASE_URL = "sqlite:///./data/ซอยตั้งสิน_BG_19486.sqlite" #Path batabase data folder
 
 engine= create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False}
@@ -17,6 +17,7 @@ class DBParkingViolation(Base):
     id= Column(Integer, primary_key=True, index=True)
     car_id = Column(Integer, index=True, nullable=True) 
     timestamp= Column(DateTime(timezone=True), index=True, default=datetime.utcnow)
+    branch = Column(String, index=True)
     branch_id = Column(String, index=True) # เลขสาขา เซ้ทมั่วไว้ก่อน 
     camera_id= Column(String, index=True) #เลขสาขา เซ้ทมั่วไว้ก่อน
     event_type = Column(String)

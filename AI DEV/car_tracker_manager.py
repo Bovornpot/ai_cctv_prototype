@@ -20,7 +20,20 @@ class CarTrackerManager:
         self.fps = fps
         self.grace_period_frames_exit = int(config.get('grace_period_frames_exit', 5)) 
 
-        # ### เพิ่ม ###: ตรรกะสำหรับโหมดทดสอบ (Debug Mode)
+        # ### เพิ่ม ###: โหลดค่าสำหรับช่วงเวลายืนยันการจอด
+        parking_time_threshold_seconds = config.get('parking_time_threshold_seconds', 3) # Default 3 วินาทีถ้าไม่มีใน config
+        self.parking_confirm_frames = int(parking_time_threshold_seconds * self.fps)
+        print(f"[Info] Parking confirmation time set to {parking_time_threshold_seconds} seconds ({self.parking_confirm_frames} frames).")
+
+        # ### เพิ่ม ###: โหลดค่าสำหรับป้องกัน ID สลับ (ID Stealing)
+        self.id_switch_threshold_px = self.movement_threshold_px * 3.0 
+        print(f"[Info] ID Switch teleport threshold set to {self.id_switch_threshold_px:.2f} pixels.")
+
+        # ### เพิ่ม ###: โหลดค่า timeout พิเศษสำหรับรถที่จอดแล้ว
+        self.parked_car_timeout_seconds = config.get('parked_car_timeout_seconds', 300) # Default 5 minutes
+        print(f"[Info] Timeout for parked cars set to {self.parked_car_timeout_seconds} seconds.")
+
+        # ตรรกะสำหรับโหมดทดสอบ (Debug Mode)
         debug_cfg = config.get('debug_settings', {})
         self.debug_mode_enabled = debug_cfg.get('enabled', False)
 
@@ -29,9 +42,8 @@ class CarTrackerManager:
             print("!!!      DEBUG MODE IS ENABLED         !!!")
             print("!!! Using shorter mock time limits.    !!!")
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            # ใช้เวลาทดสอบที่สั้นลงมาก
-            mock_violation_minutes = debug_cfg.get('mock_violation_minutes', 1) # default 1 นาที
-            mock_warning_minutes = debug_cfg.get('mock_warning_minutes', 0.5) # default 30 วินาที
+            mock_violation_minutes = debug_cfg.get('mock_violation_minutes', 1)
+            mock_warning_minutes = debug_cfg.get('mock_warning_minutes', 0.5)
             
             self.parking_time_limit_seconds = mock_violation_minutes * 60
             self.warning_time_limit_seconds = mock_warning_minutes * 60
@@ -39,111 +51,104 @@ class CarTrackerManager:
             print(f"DEBUG: Violation time set to -> {self.parking_time_limit_seconds} seconds ({mock_violation_minutes} min)")
             print(f"DEBUG: Warning time set to -> {self.warning_time_limit_seconds} seconds ({mock_warning_minutes} min)")
         else:
-            # ใช้เวลาจริงจาก config ปกติ
             self.parking_time_limit_seconds = parking_time_limit_minutes * 60
             self.warning_time_limit_seconds = warning_time_limit_minutes * 60
 
-        # tracked_cars stores current state of each car (โค้ดเดิม)
         self.tracked_cars = {} 
         self.parking_sessions_count = 0 
         self.parking_statistics = []
         self.api_events_queue = []
 
-    # ### เพิ่ม ###: ฟังก์ชันสำหรับรีเซ็ตสถานะทั้งหมด เมื่อวิดีโอเริ่มใหม่
     def reset(self):
-        """Resets the state of the tracker manager for a new video loop."""
         print("Resetting CarTrackerManager state...")
         self.tracked_cars.clear()
         self.parking_statistics.clear()
         self.api_events_queue.clear()
 
     def _frame_to_datetime(self, frame_idx, current_frame_datetime=None):
-        """Converts a frame index to a datetime object, relative to current_frame_datetime."""
-        if current_frame_datetime is None:
-            current_frame_datetime = datetime.utcnow()
-        """
-        Converts a frame index to a datetime object.
-        For simplicity, this function now returns the current UTC time,
-        as we're capturing actual timestamps directly when events occur.
-        If precise historical timestamps are needed, the video's start time
-        and frame rate must be used for calculation.
-        """
-        return datetime.utcnow() # Always return the current UTC time for timestamping events
+        return datetime.utcnow()
 
-    # ### แก้ไข ###: เพิ่ม parameter `frame` เข้ามาในเมธอด update (FEATURE 4)
-    def update(self, current_tracks, current_frame_idx, frame):
+    # <<< แก้ไข: เปลี่ยนชื่อพารามิเตอร์และเพิ่ม original_frame
+    def update(self, current_tracks, current_frame_idx, resized_frame, original_frame=None):
         detected_ids_in_frame = {t['id'] for t in current_tracks}
         alerts = []
 
-        # Update existing tracks and add new ones (โค้ดเดิม)
         for track_data in current_tracks:
             track_id = track_data['id']
             bbox = track_data['bbox']
             conf = track_data['conf']
             cls = track_data['cls']
             bbox_center_x, bbox_center_y = get_bbox_center(bbox)
+
+            if track_id in self.tracked_cars:
+                car_info = self.tracked_cars[track_id]
+                if car_info['status'] in ['PARKED', 'WARNING_PARKED', 'VIOLATION']:
+                    last_center = get_bbox_center(car_info['current_bbox'])
+                    current_center = (bbox_center_x, bbox_center_y)
+                    distance_moved = np.linalg.norm(np.array(last_center) - np.array(current_center))
+                    
+                    if distance_moved > self.id_switch_threshold_px:
+                        print(f"WARNING: Potential ID switch for parked Car ID {track_id}. Dist: {distance_moved:.2f}px. Ignoring update.")
+                        continue 
             
-            # ### แก้ไข ###: เรียกใช้ฟังก์ชัน is_point_in_any_polygon และใช้ self.parking_zones
             is_center_in_parking_zone = is_point_in_any_polygon((bbox_center_x, bbox_center_y), self.parking_zones)
 
             if track_id not in self.tracked_cars:
-                # New car detected 
                 self.tracked_cars[track_id] = {
                     'current_bbox': bbox,
                     'center_history': deque([(bbox_center_x, bbox_center_y, current_frame_idx)], maxlen=self.movement_frame_window),
                     'last_seen_frame_idx': current_frame_idx,
-                    'is_still': False,
-                    'is_parking': False,
-                    'parking_start_frame_idx': None,
-                    'parking_start_time': None,
-                    'parking_session_id': None,
-                    'has_left_zone': False,
-                    'status': 'NEW_DETECTION',
-                    'cls': cls,
+                    'is_still': False, 'is_parking': False,
+                    'parking_start_frame_idx': None, 'parking_start_time': None,
+                    'parking_session_id': None, 'has_left_zone': False,
+                    'status': 'NEW_DETECTION', 'cls': cls,
                     'frames_outside_zone_count': 0,
                     'api_event_sent_parked_start': False,
                     'api_event_sent_warning': False,
-                    'api_event_sent_violation': False
+                    'api_event_sent_violation': False,
+                    'still_start_frame_idx': None
                 }
             
             car_info = self.tracked_cars[track_id]
-            car_info['current_bbox'] = bbox
-            car_info['last_seen_frame_idx'] = current_frame_idx
+            car_info.update(current_bbox=bbox, last_seen_frame_idx=current_frame_idx)
             car_info['center_history'].append((bbox_center_x, bbox_center_y, current_frame_idx))
             
             is_still = self._check_stillness(car_info['center_history'])
             car_info['is_still'] = is_still
 
-            # Parking Logic (โค้ดเดิม)
             if not car_info['is_parking']:
-                if is_center_in_parking_zone and is_still:
-                    # Car just started parking (โค้ดเดิม)
-                    car_info['is_parking'] = True
-                    car_info['parking_start_frame_idx'] = current_frame_idx
-                    car_info['parking_start_time'] = datetime.utcnow()
-                    self.parking_sessions_count += 1
-                    car_info['parking_session_id'] = self.parking_sessions_count
-                    car_info['has_left_zone'] = False
-                    car_info['status'] = 'PARKED'
-                    print(f"[{current_frame_idx}] Car ID {track_id} started parking in zone at {car_info['parking_start_time'].isoformat()}.")
-                    
-                    if not car_info['api_event_sent_parked_start']:
-                        current_parked_count = len([c_id for c_id, c in self.tracked_cars.items() if c_id != track_id and c['is_parking'] and c['status'] in ['PARKED', 'WARNING_PARKED', 'VIOLATION']]) + 1
-                        
-                        self.api_events_queue.append({
-                            'event_type': 'parking_started',
-                            'car_id': track_id,
-                            'current_park': current_parked_count,
-                            'total_parking_sessions': self.parking_sessions_count,
-                            'entry_time': car_info['parking_start_time'],
-                            'duration_minutes': 0.0,
-                            'is_violation': False
-                        })
-                        car_info['api_event_sent_parked_start'] = True
-
-                elif is_center_in_parking_zone and not is_still:
-                    car_info['status'] = 'MOVING_IN_ZONE'
-                elif not is_center_in_parking_zone:
+                if is_center_in_parking_zone:
+                    if is_still:
+                        if car_info.get('still_start_frame_idx') is None:
+                            car_info['still_start_frame_idx'] = current_frame_idx
+                            car_info['status'] = 'CONFIRMING_PARK'
+                        else:
+                            frames_still = current_frame_idx - car_info['still_start_frame_idx']
+                            if frames_still >= self.parking_confirm_frames:
+                                car_info['is_parking'] = True
+                                car_info['parking_start_frame_idx'] = car_info['still_start_frame_idx']
+                                car_info['parking_start_time'] = datetime.utcnow() - timedelta(seconds=(frames_still / self.fps))
+                                
+                                self.parking_sessions_count += 1
+                                car_info['parking_session_id'] = self.parking_sessions_count
+                                car_info['has_left_zone'] = False
+                                car_info['status'] = 'PARKED'
+                                print(f"[{current_frame_idx}] Car ID {track_id} CONFIRMED parking.")
+                                
+                                if not car_info['api_event_sent_parked_start']:
+                                    current_parked_count = len(self.get_current_parking_cars())
+                                    self.api_events_queue.append({
+                                        'event_type': 'parking_started', 'car_id': track_id,
+                                        'current_park': current_parked_count, 'total_parking_sessions': self.parking_sessions_count,
+                                        'entry_time': car_info['parking_start_time'], 'duration_minutes': 0.0,
+                                        'is_violation': False
+                                    })
+                                    car_info['api_event_sent_parked_start'] = True
+                    else:
+                        car_info['still_start_frame_idx'] = None
+                        car_info['status'] = 'MOVING_IN_ZONE'
+                else:
+                    car_info['still_start_frame_idx'] = None
                     car_info['status'] = 'OUT_OF_ZONE'
             
             elif car_info['is_parking']:
@@ -154,10 +159,9 @@ class CarTrackerManager:
                         parking_duration_s = parking_duration_frames / self.fps
                         parking_duration_min = parking_duration_s / 60.0
 
-                        # ### เพิ่ม ###: ตรรกะการกรองเซสชันที่สั้นกว่า 1 นาที
                         if parking_duration_min < 1.0 and not self.debug_mode_enabled:
                             print(f"[Info] Short parking session ({parking_duration_min:.2f} min) for Car ID {track_id} ignored. Correcting session count.")
-                            self.parking_sessions_count -= 1 # แก้ไขยอดรวมให้ถูกต้อง
+                            self.parking_sessions_count -= 1
                         else:
                             is_violation_status = (parking_duration_s > self.parking_time_limit_seconds)
                             status_before_exit = 'VIOLATION_ENDED' if is_violation_status else 'PARKED_ENDED'
@@ -179,11 +183,11 @@ class CarTrackerManager:
                                 'duration_minutes': round(parking_duration_min, 2), 'is_violation': is_violation_status
                             })
 
-                        # Reset car's parking state in all cases
                         car_info.update(is_parking=False, parking_start_frame_idx=None, parking_start_time=None,
                                         parking_session_id=None, has_left_zone=True, status='OUT_OF_ZONE',
                                         frames_outside_zone_count=0, api_event_sent_parked_start=False,
-                                        api_event_sent_warning=False, api_event_sent_violation=False)
+                                        api_event_sent_warning=False, api_event_sent_violation=False,
+                                        still_start_frame_idx=None)
                     else:
                         car_info['status'] = 'OUT_OF_ZONE_GRACE_PERIOD'
                 else:
@@ -244,14 +248,33 @@ class CarTrackerManager:
                                 
                                 image_base64 = None
                                 try:
-                                    x1, y1, x2, y2 = map(int, car_info['current_bbox'])
-                                    if x2 > x1 and y2 > y1:
-                                        cropped_car = frame[y1:y2, x1:x2]
-                                        _, buffer = cv2.imencode('.jpg', cropped_car)
-                                        image_base64 = base64.b64encode(buffer).decode('utf-8')
-                                        print(f"Successfully captured and encoded image for car ID {track_id}.")
+                                    # ตรวจสอบว่ามีเฟรมต้นฉบับส่งมาหรือไม่
+                                    if original_frame is not None:
+                                        # Bbox ปัจจุบันอยู่ในพิกัดของเฟรมที่ย่อแล้ว (resized_frame)
+                                        x1_s, y1_s, x2_s, y2_s = map(int, car_info['current_bbox'])
+
+                                        # คำนวณอัตราส่วนเพื่อแปลงพิกัดกลับไปหาเฟรมต้นฉบับ
+                                        orig_h, orig_w = original_frame.shape[:2]
+                                        res_h, res_w = resized_frame.shape[:2]
+                                        scale_x = orig_w / res_w
+                                        scale_y = orig_h / res_h
+
+                                        # แปลงพิกัด bbox กลับไปเป็นพิกัดบนเฟรมต้นฉบับ
+                                        x1_o = int(x1_s * scale_x)
+                                        y1_o = int(y1_s * scale_y)
+                                        x2_o = int(x2_s * scale_x)
+                                        y2_o = int(y2_s * scale_y)
+
+                                        # Crop ภาพจากเฟรมต้นฉบับ (original_frame)
+                                        if x2_o > x1_o and y2_o > y1_o:
+                                            cropped_car_high_res = original_frame[y1_o:y2_o, x1_o:x2_o]
+                                            _, buffer = cv2.imencode('.jpg', cropped_car_high_res)
+                                            image_base64 = base64.b64encode(buffer).decode('utf-8')
+                                            print(f"Successfully captured high-resolution image for car ID {track_id}.")
+                                        else:
+                                            print(f"Warning: Invalid scaled bbox dimensions for car ID {track_id}. Cannot crop image.")
                                     else:
-                                        print(f"Warning: Invalid bbox dimensions for car ID {track_id}. Cannot crop image.")
+                                        print(f"Warning: Original frame not provided. Cannot capture high-resolution image.")
                                 except Exception as e:
                                     print(f"ERROR: Could not capture image for car ID {track_id}: {e}")
                                 
@@ -282,17 +305,29 @@ class CarTrackerManager:
                         else:
                             car_info['status'] = 'PARKED'
 
-         # Clean up old tracks (cars that disappeared)
+        # Clean up old tracks (cars that disappeared)
         ids_to_remove = []
         for track_id, car_info in list(self.tracked_cars.items()):
             if track_id not in detected_ids_in_frame:
-                if car_info['last_seen_frame_idx'] < current_frame_idx - self.fps * 5:
+                
+                # ### แก้ไข ###: เพิ่มเงื่อนไขพิเศษสำหรับรถที่จอดอยู่
+                is_parked = car_info.get('is_parking', False)
+                
+                # คำนวณเวลาที่หายไป (เป็นวินาที)
+                frames_disappeared = current_frame_idx - car_info['last_seen_frame_idx']
+                seconds_disappeared = frames_disappeared / self.fps
+
+                # กำหนดเวลา timeout ตามสถานะ
+                # รถที่จอดอยู่จะได้รับเวลา timeout นานกว่ามาก เพื่อป้องกันการ "ลืม" ID โดยไม่จำเป็น
+                timeout_seconds = self.parked_car_timeout_seconds if is_parked else 5.0
+
+                if seconds_disappeared > timeout_seconds:
+                    print(f"[Info] Removing track ID {track_id} after being lost for {seconds_disappeared:.2f} seconds (is_parked={is_parked}).")
                     if car_info['is_parking']:
                         parking_duration_frames = current_frame_idx - car_info['parking_start_frame_idx']
                         parking_duration_s = parking_duration_frames / self.fps
                         parking_duration_min = parking_duration_s / 60.0
                         
-                        # ### เพิ่ม ###: ตรรกะการกรองเซสชันที่สั้นกว่า 1 นาที
                         if parking_duration_min < 1.0 and not self.debug_mode_enabled:
                             print(f"[Info] Short parking session ({parking_duration_min:.2f} min) for disappeared Car ID {track_id} ignored. Correcting session count.")
                             self.parking_sessions_count -= 1
@@ -436,6 +471,44 @@ class CarTrackerManager:
             "all_sessions_details": all_sessions_for_summary 
         }
         return summary_stats
+
+    # <<< เพิ่ม: เมธอดใหม่สำหรับปิดท้ายทุก session ที่ยังแอคทีฟอยู่
+    def finalize_all_sessions(self, final_frame_idx):
+        """
+        Called at the end of a video file to close out any remaining active parking sessions.
+        """
+        print(f"[Info] Finalizing all active parking sessions at frame {final_frame_idx}...")
+        active_car_ids = list(self.tracked_cars.keys())
+
+        for track_id in active_car_ids:
+            car_info = self.tracked_cars.get(track_id)
+            if car_info and car_info.get('is_parking'):
+                parking_duration_frames = final_frame_idx - car_info['parking_start_frame_idx']
+                parking_duration_s = parking_duration_frames / self.fps
+                parking_duration_min = parking_duration_s / 60.0
+                is_violation_status = (parking_duration_s > self.parking_time_limit_seconds)
+
+                # เพิ่มข้อมูลลงในสถิติ
+                final_status = 'VIOLATION_ENDED_ON_SHUTDOWN' if is_violation_status else 'PARKED_ENDED_ON_SHUTDOWN'
+                self.parking_statistics.append({
+                    'session_id': car_info['parking_session_id'], 'car_id': track_id,
+                    'start_frame': car_info['parking_start_frame_idx'], 'end_frame': final_frame_idx,
+                    'duration_s': parking_duration_s, 'duration_min': parking_duration_min,
+                    'final_status': final_status
+                })
+
+                # เพิ่ม event เข้าคิวเพื่อส่งไปที่ API
+                current_parked_count = len([c_id for c_id, c in self.tracked_cars.items() if c_id != track_id and c.get('is_parking')])
+                self.api_events_queue.append({
+                    'event_type': 'parking_ended_shutdown', 'car_id': track_id,
+                    'current_park': current_parked_count, 'total_parking_sessions': self.parking_sessions_count,
+                    'entry_time': car_info['parking_start_time'], 'exit_time': datetime.utcnow(),
+                    'duration_minutes': round(parking_duration_min, 2), 'is_violation': is_violation_status
+                })
+                print(f"[Parking Ended - Video End] Car ID {track_id}, Session ID {car_info['parking_session_id']}: Parked for {parking_duration_s:.2f} seconds.")
+
+        # ล้างข้อมูลรถที่ติดตามทั้งหมดหลังประมวลผลเสร็จ
+        self.tracked_cars.clear()
 
     def get_parking_events_for_api(self):
         events = list(self.api_events_queue)

@@ -53,9 +53,6 @@ async def lifespan(app: FastAPI):
             last_hourly_summary_check_time = datetime.now(thailand_tz).replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
             logger.info(f"Initial last_hourly_summary_check_time set (no DB record): {last_hourly_summary_check_time}")
 
-    asyncio.create_task(hourly_summary_task())
-    logger.info("Hourly summary background task started.")
-
     yield 
 
     logger.info("Application shutdown: Stopping services and cleaning up...")
@@ -136,6 +133,7 @@ async def create_inference_result(
 
             db_item = database.DBParkingViolation( 
                 timestamp=timestamp_aware_utc,
+                branch=pv_data.branch,
                 branch_id=pv_data.branch_id,
                 camera_id=pv_data.camera_id,
                 event_type=pv_data.event_type, 
@@ -182,113 +180,6 @@ async def create_inference_result(
             detail=f"Failed to process inference result: {e}"
         )
 
-# --- Background task for Hourly Summary ---
-async def hourly_summary_task():
-    global last_hourly_summary_check_time 
-    logger.info("Hourly summary background task starting up.")
-
-    if last_hourly_summary_check_time is None:
-        logger.warning("last_hourly_summary_check_time was not initialized by lifespan. Initializing now.")
-        last_hourly_summary_check_time = datetime.now(thailand_tz).replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
-
-    while True:
-        now = datetime.now(thailand_tz) 
-        current_hour_start = now.replace(minute=0, second=0, microsecond=0)
-
-        summary_target_hour_start = last_hourly_summary_check_time + timedelta(hours=1)
-
-        while summary_target_hour_start < current_hour_start: 
-            summary_target_hour_end = summary_target_hour_start + timedelta(hours=1) - timedelta(microseconds=1)
-
-            logger.info(f"Preparing to summarize data for hour: {summary_target_hour_start.strftime('%Y-%m-%d %H:%M:%S%z')}")
-
-            db_session = next(get_db())
-            try:
-                timestamp_for_db_query = summary_target_hour_start.astimezone(pytz.utc).replace(tzinfo=None)
-
-                existing_summary = db_session.query(database.DBParkingViolation.id)\
-                                                .filter(
-                                                    database.DBParkingViolation.event_type == "hourly_summary",
-                                                    database.DBParkingViolation.timestamp == timestamp_for_db_query,
-                                                    database.DBParkingViolation.branch_id == "AGGREGATED_BRANCH",
-                                                    database.DBParkingViolation.camera_id == "AGGREGATED_CAMERAS"
-                                                ).first()
-
-                if existing_summary:
-                    logger.info(f"Hourly summary for {summary_target_hour_start.strftime('%Y-%m-%d %H:%M%z')} already exists. Skipping.")
-                else:
-                    new_sessions_in_hour = 0 
-
-                    unique_camera_ids = db_session.query(database.DBParkingViolation.camera_id).filter(
-                        database.DBParkingViolation.event_type != "hourly_summary",
-                        database.DBParkingViolation.timestamp >= summary_target_hour_start.astimezone(pytz.utc).replace(tzinfo=None),
-                        database.DBParkingViolation.timestamp <= summary_target_hour_end.astimezone(pytz.utc).replace(tzinfo=None)
-                    ).distinct().all()
-
-                    for cam_id_tuple in unique_camera_ids:
-                        cam_id = cam_id_tuple[0]
-
-                        # ### แก้ไข ###: ปรับปรุงตรรกะการหา start_value เพื่อแก้ปัญหาการรันครั้งแรก
-                        # 1. ค้นหาค่า session ล่าสุดที่เกิดขึ้น *ก่อน* ชั่วโมงที่จะสรุป
-                        last_session_before_hour = db_session.query(database.DBParkingViolation.total_parking_sessions)\
-                            .filter(
-                                database.DBParkingViolation.event_type != "hourly_summary",
-                                database.DBParkingViolation.camera_id == cam_id,
-                                database.DBParkingViolation.timestamp < summary_target_hour_start.astimezone(pytz.utc).replace(tzinfo=None) 
-                            ).order_by(database.DBParkingViolation.timestamp.desc()).first()
-
-                        # 2. ถ้าไม่เจอข้อมูลก่อนหน้านี้เลย (การรันครั้งแรกของกล้องนี้) ให้ start_value เป็น 0
-                        if last_session_before_hour is None:
-                            start_value = 0
-                        else:
-                            start_value = last_session_before_hour[0] if last_session_before_hour[0] is not None else 0
-                        
-                        # ค้นหาค่า session ล่าสุด *ภายใน* ชั่วโมงที่จะสรุป
-                        end_of_hour_event = db_session.query(database.DBParkingViolation.total_parking_sessions)\
-                            .filter(
-                                database.DBParkingViolation.event_type != "hourly_summary",
-                                database.DBParkingViolation.camera_id == cam_id,
-                                database.DBParkingViolation.timestamp <= summary_target_hour_end.astimezone(pytz.utc).replace(tzinfo=None) 
-                            ).order_by(database.DBParkingViolation.timestamp.desc()).first()
-
-                        end_value = end_of_hour_event[0] if end_of_hour_event and end_of_hour_event[0] is not None else start_value
-
-                        if end_value >= start_value:
-                            new_sessions_in_hour += (end_value - start_value)
-                        else:
-                            logger.warning(f"Counter reset detected for camera {cam_id} for hour {summary_target_hour_start.strftime('%H:%M%z')}. End value: {end_value}. Assuming end_value as sessions for this period.")
-                            new_sessions_in_hour += end_value
-
-                    db_summary = database.DBParkingViolation(
-                        timestamp=summary_target_hour_start.astimezone(pytz.utc).replace(tzinfo=None), 
-                        branch_id="AGGREGATED_BRANCH", 
-                        camera_id="AGGREGATED_CAMERAS", 
-                        event_type="hourly_summary", 
-                        total_parking_sessions_hourly=new_sessions_in_hour
-                    )
-                    db_session.add(db_summary)
-                    db_session.commit()
-                    db_session.refresh(db_summary)
-
-                    logger.info(f"Hourly summary recorded for {summary_target_hour_start.strftime('%Y-%m-%d %H:%M%z')}: {new_sessions_in_hour} total sessions.")
-
-                last_hourly_summary_check_time = summary_target_hour_start 
-                summary_target_hour_start = summary_target_hour_start + timedelta(hours=1)
-
-            except Exception as e:
-                db_session.rollback() 
-                logger.error(f"Error recording hourly summary for {summary_target_hour_start}: {e}", exc_info=True)
-                break 
-            finally:
-                db_session.close()
-
-        if summary_target_hour_start >= current_hour_start:
-            logger.info(f"Hourly summary check: No new hour to summarize. Last summarized: {last_hourly_summary_check_time.strftime('%Y-%m-%d %H:%M:%S%z')}, Current hour: {current_hour_start.strftime('%Y-%m-%d %H:%M:%S%z')}.")
-
-        sleep_duration = max(1, (current_hour_start + timedelta(hours=1) - now).total_seconds() + 0.1) 
-        logger.debug(f"Sleeping for {sleep_duration:.2f} seconds until next check.")
-        await asyncio.sleep(sleep_duration)
-
 # --- Get Parking Violations Endpoint (โค้ดเดิม) ---
 @app.get("/DBParkingViolation/", response_model=List[schemas.ParkingViolationData], summary="Get Parking Violations")
 def get_DBParkingViolation(
@@ -313,6 +204,7 @@ def get_DBParkingViolation(
     return [
         schemas.ParkingViolationData(
             timestamp=v.timestamp.replace(tzinfo=pytz.utc).astimezone(thailand_tz) if v.timestamp else None,
+            branch=v.branch,
             branch_id=v.branch_id,
             camera_id=v.camera_id,
             event_type=v.event_type,
@@ -372,50 +264,4 @@ def get_chilled_basket_alerts(
     alerts = query.offset(skip).limit(limit).all()
     logger.info(f"Retrieved {len(alerts)} chilled basket alerts.")
     return alerts
-    pass
-
-# --- Get Hourly Parking Summaries Endpoint (โค้ดเดิม) ---
-@app.get("/hourly_parking_summary/", response_model=List[schemas.ParkingViolationData], summary="Get Hourly Parking Summaries")
-def get_hourly_parking_summary(
-    start_time: Optional[datetime] = Query(None, description="Start datetime for summary (e.g., 2024-07-01T00:00:00)"),
-    end_time: Optional[datetime] = Query(None, description="End datetime for summary (e.g., 2024-07-02T23:59:59)"),
-    db: Session = Depends(get_db)
-):
-    query = db.query(database.DBParkingViolation).filter( 
-        database.DBParkingViolation.event_type == "hourly_summary"
-    )
-
-    if start_time:
-        if start_time.tzinfo is None:
-            start_time = thailand_tz.localize(start_time).astimezone(pytz.utc).replace(tzinfo=None)
-        else:
-            start_time = start_time.astimezone(pytz.utc).replace(tzinfo=None)
-        query = query.filter(database.DBParkingViolation.timestamp >= start_time)
-    if end_time:
-        if end_time.tzinfo is None:
-            end_time = thailand_tz.localize(end_time).astimezone(pytz.utc).replace(tzinfo=None)
-        else:
-            end_time = end_time.astimezone(pytz.utc).replace(tzinfo=None)
-        query = query.filter(database.DBParkingViolation.timestamp <= end_time)
-
-    query = query.order_by(database.DBParkingViolation.timestamp.asc()) 
-
-    summaries = query.all()
-    logger.info(f"Retrieved {len(summaries)} hourly parking summaries.")
-
-    return [
-        schemas.ParkingViolationData(
-            timestamp=s.timestamp.replace(tzinfo=pytz.utc).astimezone(thailand_tz) if s.timestamp else None,
-            branch_id=s.branch_id,
-            camera_id=s.camera_id,
-            event_type=s.event_type,
-            car_id=None, 
-            current_park=0, 
-            entry_time=s.timestamp.replace(tzinfo=pytz.utc).astimezone(thailand_tz) if s.timestamp else None, 
-            exit_time=None,
-            duration_minutes=0.0, 
-            is_violation=False, 
-            total_parking_sessions=s.total_parking_sessions_hourly or 0 
-        ) for s in summaries
-    ]
     pass

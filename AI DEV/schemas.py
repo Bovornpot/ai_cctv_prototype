@@ -6,6 +6,7 @@ from datetime import datetime
 # --- Base Schema for all Analytics Events ---
 class BaseAnalyticsEvents(BaseModel):
     timestamp: datetime = Field(..., examples="2024-07-01T10:30:00Z")
+    branch: str = Field(..., examples="แผ่นดินทอง 40")
     branch_id: str = Field(..., examples="15517")
     camera_id: str =Field(..., examples="cam_01")
     event_type: str = Field(...,description= "Type of event (e.g., 'parking_violation', 'table_occupancy', 'chilled_basket_alert', 'beverage_stock_update')")
