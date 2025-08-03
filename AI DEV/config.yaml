@@ -61,7 +61,7 @@ display_combined_max_height: 540 # <<< ปรับ: ลดขนาดสูง
 queue_max_size: 5 # <<< ปรับ: ลองลดขนาด Queue เพื่อประหยัด RAM ในแต่ละ Process
 
 # Global flags for saving (ใช้ใน worker processes)
-save_video: False        # <<< เพิ่ม: ควบคุมการบันทึกวิดีโอ (เปลี่ยนเป็น True ถ้าต้องการ)
+save_video: False       # <<< เพิ่ม: ควบคุมการบันทึกวิดีโอ (เปลี่ยนเป็น True ถ้าต้องการ)
 save_mot_results: False  # <<< เพิ่ม: ควบคุมการบันทึกผล MOT (เปลี่ยนเป็น True ถ้าต้องการ)
 
 # Brightness Adjustment (เพิ่มเข้ามาตามโค้ดที่คุณมี)
@@ -72,16 +72,16 @@ brightness_method: clahe            # clahe หรือ histogram
 video_sources:
   - name: "petchhome_cam"
     # แก้ไข path นี้ให้ถูกต้อง
-    branch: "ซอยตั้งสิน"
-    source_path: "C:/Users/Loq/Documents/ai_nemo/ซอยตั้งสิน_BG_19486 (1).mp4"
+    branch: "บ้านในยาง"
+    source_path: "C:/Users/Loq/Documents/ai_nemo/บ้านในยาง_RSL_19662(1).mp4"
     parking_zone_file: "parking_zone_camera1.json"
-    branch_id: "11818_BN"
-    camera_id: "F1_11818_BN"
+    branch_id: "19662_RSL"
+    camera_id: "F1_19662_RSL"
 
   - name: "petchhome1_cam"
     # แก้ไข path นี้ให้ถูกต้อง
-    branch: "ซอยตั้งสิน_BG_19486"
-    source_path: "C:/Users/Loq/Documents/ai_nemo/ซอยตั้งสิน_BG_19486 (2).mp4"
+    branch: "บ้านในยาง"
+    source_path: "C:/Users/Loq/Documents/ai_nemo/บ้านในยาง_RSL_19662(2).mp4"
     parking_zone_file: "parking_zone_camera2.json"
     branch_id: "19662_RSL"
     camera_id: "F2_19662_RSL"
@@ -92,7 +92,7 @@ performance_settings:
   # ความกว้างของเฟรมที่จะใช้ส่งเข้าโมเดล YOLO และ Tracker
   # ยิ่งค่าน้อยลง ยิ่งเร็วขึ้น แต่ความแม่นยำอาจลดลงสำหรับวัตถุเล็กๆ
   # แนะนำให้ลอง: 640 (มาตรฐาน), 480, 320
-  target_inference_width: 640 
+  target_inference_width: 1280 
 
   # จำนวนเฟรมที่จะข้ามก่อนประมวลผล
   # 1: ไม่ข้ามเฟรมเลย (ประมวลผลทุกเฟรม)
