@@ -46,7 +46,7 @@ const EvidenceModal: React.FC<{ violation: ParkingViolationEvent; onClose: () =>
                 </div>
                 <div className="modal-body">
                     <div className="modal-image-container">
-                        <img src={`data:image/jpeg;base64,${violation.imageBase64}`} alt={`Evidence for vehicle ${violation.vehicleId}`} />
+                        <img src={violation.imageUrl} alt={`Evidence for vehicle ${violation.vehicleId}`} />
                     </div>
                     <div className="modal-details">
                         <p><strong>Vehicle ID:</strong> <span className="font-mono">{violation.vehicleId}</span></p>

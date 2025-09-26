@@ -10,11 +10,16 @@ from backend.app.schemas import (
 PATH_TO_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(PATH_TO_PROJECT_ROOT)
 
-def generate_fake_base64_image():
-    """Generates a simple placeholder base64 string."""
-    text_to_encode = "fake_image_data_placeholder"
-    encoded_data = base64.b64encode(text_to_encode.encode('utf-8'))
-    return f"data:image/jpeg;base64,{encoded_data.decode('utf-8')}"
+# def generate_fake_base64_image():
+#     """Generates a simple placeholder base64 string."""
+#     text_to_encode = "fake_image_data_placeholder"
+#     encoded_data = base64.b64encode(text_to_encode.encode('utf-8'))
+#     return f"data:image/jpeg;base64,{encoded_data.decode('utf-8')}"
+
+# ตัวอย่างฟังก์ชันสำหรับสร้าง URL ปลอม
+def generate_fake_image_url():
+    # ในการใช้งานจริง อาจจะใช้ storage url เช่น AWS S3, Google Cloud Storage
+    return f"https://picsum.photos/800/600?random={random.randint(1, 1000)}"
 
 def generate_mock_ai_results(branch_id: str, camera_id: str):
     """จำลองผลลัพธ์จาก AI ให้สอดคล้องกับ Pydantic Schemas"""
@@ -50,7 +55,9 @@ def generate_mock_ai_results(branch_id: str, camera_id: str):
                 duration_minutes=duration,
                 is_violation=is_violation,
                 total_parking_sessions=random.randint(300, 500), # ADDED: missing required field
-                image_base64=generate_fake_base64_image() if is_violation else None # ADDED: for completeness
+                # image_base64=generate_fake_base64_image() if is_violation else None # ADDED: for completeness
+                image_url=generate_fake_image_url() if is_violation else None
+# ...
             )
             unified_payload = AnalyticsDataIn(parking_violation=parking_data)
 

@@ -25,7 +25,8 @@ class ParkingViolationData(BaseAnalyticsEvents):
     is_violation: bool= Field(...,examples=True)
     total_parking_sessions: int = Field(..., examples=15, description="Accumulated total parking sessions for this camera since start or last reset.")
      # field สำหรับรับภาพ Base64 ###
-    image_base64: Optional[str] = Field(None, description="Base64 encoded snapshot of the violation.")
+    # image_base64: Optional[str] = Field(None, description="Base64 encoded snapshot of the violation.")
+    image_url: Optional[str] = Field(None, description="URL of the snapshot of the violation.")
 
 class TableOccupancyData(BaseAnalyticsEvents):
     event_type: Literal["table_occupancy"] = "table_occupancy"

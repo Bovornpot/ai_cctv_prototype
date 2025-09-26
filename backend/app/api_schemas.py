@@ -27,7 +27,8 @@ class ParkingViolationEvent(BaseModel):
     durationMinutes: float
     isViolation: bool
     total_parking_sessions: int
-    imageBase64: Optional[str] = None
+    # imageBase64: Optional[str] = None
+    imageUrl: Optional[str] = None
 
     class Config:
         orm_mode = True

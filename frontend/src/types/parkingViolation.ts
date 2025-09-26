@@ -19,7 +19,7 @@ export interface ParkingViolationEvent {
   durationMinutes: number;
   isViolation: boolean;
   total_parking_sessions: number;
-  imageBase64?: string;
+  imageUrl?: string;
 }
 
 export interface ParkingKpiData {

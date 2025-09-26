@@ -28,22 +28,27 @@ except ImportError:
     sys.exit(1)
 
 # --- NEW: เพิ่ม Dictionary สำหรับชื่อสาขา ---
-BRANCH_NAMES = {
-    "1955": "สาขาลาดพร้าว",
-    "15144": "สาขารัชดา",
-    "10333": "สาขาสุขุมวิท",
-    "2247": "สาขาสีลม",
-    "22853": "สาขาบางนา",
-    "12190": "สาขาพระราม 9",
-    "2172": "สาขาแจ้งวัฒนะ"
-}
+# BRANCH_NAMES = {
+#     "1955": "สาขาลาดพร้าว",
+#     "15144": "สาขารัชดา",
+#     "10333": "สาขาสุขุมวิท",
+#     "2247": "สาขาสีลม",
+#     "22853": "สาขาบางนา",
+#     "12190": "สาขาพระราม 9",
+#     "2172": "สาขาแจ้งวัฒนะ"
+# }
 
-# --- ฟังก์ชันสร้างข้อมูลจำลอง (Mock Data Generator) ---
-def generate_fake_base64_image():
-    """สร้างข้อมูลรูปภาพ Base64 จำลอง"""
-    text_to_encode = "fake_image_data_placeholder"
-    encoded_data = base64.b64encode(text_to_encode.encode('utf-8'))
-    return f"data:image/jpeg;base64,{encoded_data.decode('utf-8')}"
+# # --- ฟังก์ชันสร้างข้อมูลจำลอง (Mock Data Generator) ---
+# def generate_fake_base64_image():
+#     """สร้างข้อมูลรูปภาพ Base64 จำลอง"""
+#     text_to_encode = "fake_image_data_placeholder"
+#     encoded_data = base64.b64encode(text_to_encode.encode('utf-8'))
+#     return f"data:image/jpeg;base64,{encoded_data.decode('utf-8')}"
+
+def generate_fake_image_url():
+    """สร้าง URL รูปภาพจำลองจากบริการภายนอก เช่น unsplash.it หรือ picsum.photos"""
+    # ใช้ picsum.photos เพื่อสร้าง URL รูปภาพแบบสุ่ม
+    return f"https://picsum.photos/800/600?random={random.randint(1, 1000)}"
 
 def generate_mock_ai_results(branch_id: str, camera_id: str):
     """จำลองผลลัพธ์จาก AI (เฉพาะ ParkingViolationData)"""
@@ -51,9 +56,6 @@ def generate_mock_ai_results(branch_id: str, camera_id: str):
     results = []
     # สร้าง event 1-2 ครั้งต่อรอบเสมอ
     num_events = random.randint(1, 2)
-    
-    # ดึงชื่อสาขาจาก Dictionary
-    branch_name = BRANCH_NAMES.get(branch_id, "สาขาไม่ระบุ")
 
     for _ in range(num_events):
         # --- สร้างข้อมูลเฉพาะ ParkingViolationData ---
@@ -67,7 +69,6 @@ def generate_mock_ai_results(branch_id: str, camera_id: str):
         parking_data = ParkingViolationData(
             timestamp=current_time,
             branch_id=branch_id,
-            branch=branch_name, # <-- FIX: เพิ่มชื่อสาขาที่นี่
             camera_id=camera_id,
             event_type="parking_violation",
             car_id=random.randint(1000, 9999),
@@ -77,7 +78,7 @@ def generate_mock_ai_results(branch_id: str, camera_id: str):
             duration_minutes=duration,
             is_violation=is_violation,
             total_parking_sessions=random.randint(300, 500),
-            image_base64=generate_fake_base64_image() if is_violation else None
+            image_url=generate_fake_image_url() if is_violation else None
         )
         unified_payload = AnalyticsDataIn(parking_violation=parking_data)
         results.append(unified_payload.model_dump_json())

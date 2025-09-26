@@ -310,7 +310,7 @@ def get_violation_events(
             durationMinutes=v.duration_minutes,
             isViolation=v.is_violation,
             total_parking_sessions=v.total_parking_sessions or 0,
-            imageBase64=v.image_base64
+            imageUrl=v.image_url
         )
         results.append(event)
     

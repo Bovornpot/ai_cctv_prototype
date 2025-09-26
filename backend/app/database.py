@@ -34,11 +34,17 @@ class DBParkingViolation(Base):
     total_parking_sessions = Column(Integer, nullable=True)
     # total_parking_sessions_hourly = Column(Integer, nullable=True)
     # ### FIX: เพิ่มคอลัมน์สำหรับเก็บภาพ Base64 ###
-    image_base64 = Column(Text, nullable=True)
+    # image_base64 = Column(Text, nullable=True)
+    # def __repr__(self):
+    #     return (f"<ParkingViolation(id={self.id}, car_id={self.car_id}, "
+    #             f"camera_id='{self.camera_id}', event_type='{self.event_type}', "
+    #             f"timestamp='{self.timestamp}')>")
+    image_url = Column(String, nullable=True)
     def __repr__(self):
         return (f"<ParkingViolation(id={self.id}, car_id={self.car_id}, "
-                f"camera_id='{self.camera_id}', event_type='{self.event_type}', "
-                f"timestamp='{self.timestamp}')>")
+                f"branch='{self.branch}', camera_id='{self.camera_id}', "
+                f"event_type='{self.event_type}', timestamp='{self.timestamp}', "
+                f"image_url='{self.image_url}')>")
     
 class DBTableOccupancy(Base):
     __tablename__= "table_occupancy"

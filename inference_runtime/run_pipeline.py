@@ -15,6 +15,8 @@ BACKEND_API_URL = "http://127.0.0.1:8000/analytics"
 
 NUM_MOCK_BRANCHES = 5 #จำลอง 5 สาขา
 BRANCHES = [str(random.randint(100, 29999)) for _ in range(NUM_MOCK_BRANCHES)]
+# สร้างชื่อสาขาสำหรับ branch_id ที่ถูกสร้างขึ้นแบบสุ่ม
+BRANCH_NAMES = {branch_id: f"สาขา_{branch_id}" for branch_id in BRANCHES}
 
 def send_to_backend(branch_id: str, camera_id: str, data_payload_json_string: str):
     headers= {"Content-Type": "application/json"}
@@ -33,8 +35,9 @@ def main():
 
     while True:
         for branch_id in BRANCHES:
+            branch_name = BRANCH_NAMES.get(branch_id, "สาขาไม่ระบุ")
             num_cameras_for_this_branch = random.randint(8, 16)
-            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Simulating {num_cameras_for_this_branch} cameras for Branch ID: {branch_id}")
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Simulating {num_cameras_for_this_branch} cameras for Branch ID: {branch_id}, Branch Name: {branch_name}") # ปรับปรุง log message
             
             for i in range(num_cameras_for_this_branch):
                 camera_id = f"{branch_id}_Cam_{i+1}"
