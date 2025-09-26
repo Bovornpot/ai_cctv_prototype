@@ -140,12 +140,6 @@ sympy==1.14.0
 
 threadpoolctl==3.6.0
 
-torch==2.7.1+cpu
-
-torchaudio==2.7.1+cpu
-
-torchvision==0.22.1+cpu
-
 tqdm==4.67.1
 
 typing-inspection==0.4.1
@@ -169,3 +163,4 @@ win32_setctime==1.2.0
 yacs==0.1.8
 
 zipp==3.23.0
+
