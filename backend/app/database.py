@@ -24,21 +24,12 @@ class DBParkingViolation(Base):
     branch_id = Column(String, index=True) # เลขสาขา เซ้ทมั่วไว้ก่อน 
     camera_id= Column(String, index=True) #เลขสาขา เซ้ทมั่วไว้ก่อน
     event_type = Column(String)
-    # vehicle_id= Column(String, index=True)
     current_park = Column(Integer, nullable=True) 
-    # parking_slot_id= Column(String, index=True)
     entry_time = Column(DateTime(timezone=True), nullable=True) # เปลี่ยนตรงนี้
     exit_time = Column(DateTime(timezone=True), nullable=True)
     duration_minutes= Column(Float)
     is_violation= Column(Boolean)
     total_parking_sessions = Column(Integer, nullable=True)
-    # total_parking_sessions_hourly = Column(Integer, nullable=True)
-    # ### FIX: เพิ่มคอลัมน์สำหรับเก็บภาพ Base64 ###
-    # image_base64 = Column(Text, nullable=True)
-    # def __repr__(self):
-    #     return (f"<ParkingViolation(id={self.id}, car_id={self.car_id}, "
-    #             f"camera_id='{self.camera_id}', event_type='{self.event_type}', "
-    #             f"timestamp='{self.timestamp}')>")
     image_url = Column(String, nullable=True)
     def __repr__(self):
         return (f"<ParkingViolation(id={self.id}, car_id={self.car_id}, "
@@ -54,7 +45,6 @@ class DBTableOccupancy(Base):
     camera_id= Column(String, index=True)
     event_type = Column(String)
     table_id = Column(String, index=True)
-    # total_table= Column(Integer, index=True)
     is_occupied= Column(Boolean)
     occupancy_start_time= Column(DateTime, index=True)
     occupancy_end_time= Column(DateTime, nullable=True)
@@ -75,7 +65,6 @@ class DBChilledBasketAlert(Base):
     duration_minutes= Column(Float, nullable=True)
     is_alert_triggered= Column(Boolean)
     alert_reason= Column(String, nullable=True)
-
 
 # Function to create tables (call this once when the app starts)
 def create_db_tables():

@@ -63,7 +63,7 @@ const EvidenceModal: React.FC<{ violation: ParkingViolationEvent; onClose: () =>
     );
 };
 
-type ActiveTab = 'all' | 'violations';
+type ActiveTab = 'in-progress' | 'violations' | 'all';
 interface ViolationsTableProps {
   violations: ParkingViolationEvent[];
   currentPage: number;
@@ -73,59 +73,71 @@ interface ViolationsTableProps {
   onTabChange: (tab: ActiveTab) => void;
 }
 
+
 const ViolationsTable: React.FC<ViolationsTableProps> = ({ violations, currentPage, totalPages, onPageChange, activeTab ,onTabChange }) => {
 //   const [activeTab, setActiveTab] = useState<'all' | 'violations'>('violations');
   const [selectedViolation, setSelectedViolation] = useState<ParkingViolationEvent | null>(null);
-  
-  // กรองข้อมูลตาม Tab ที่เลือก
-//   const filteredViolations = useMemo(() => {
-//     if (activeTab === 'violations') {
-//       // กรองเฉพาะรายการที่เป็น Violation
-//       return violations.filter(v => v.isViolation);
-//     }
-//     // ถ้าเป็น 'all' ให้แสดงทั้งหมด
-//     return violations;
-//   }, [violations, activeTab]); // คำนวณใหม่เมื่อ violations หรือ activeTab เปลี่ยน
+
+    // ฟิลเตอร์ข้อมูลตาม activeTab
+    let filteredViolations = violations;
+
+    if (activeTab === 'in-progress') {
+    // แสดงเฉพาะ Violate และยังไม่ออก (exitTime == null)
+    filteredViolations = violations.filter(v => v.status === 'Violate' && !v.exitTime);
+    } else if (activeTab === 'violations') {
+    // รถที่ Violate ทั้งหมด (ไม่สนว่าออกหรือยัง)
+    filteredViolations = violations.filter(v => v.status === 'Violate');
+    } else if (activeTab === 'all') {
+    // รถทั้งหมด (ไม่กรอง)
+    filteredViolations = violations;
+    }
+
 
   return (
         <div>
             {/* --- Tab buttons (เปลี่ยนชื่อ Tab) --- */}
             <div className="tabs-container">
                 <button
+                    className={`tab-button ${activeTab === 'in-progress' ? 'active' : ''}`}
+                    onClick={() => onTabChange('in-progress')}
+                >
+                    กำลังจอดรถเกิน
+                </button>
+                <button
                     className={`tab-button ${activeTab === 'violations' ? 'active' : ''}`}
                     onClick={() => onTabChange('violations')}
                 >
-                    Active Violations
+                    รถจอดเกินเวลา
                 </button>
                 <button
                     className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
                     onClick={() => onTabChange('all')}
                 >
-                    Joined Parking Sessions
+                    รถเข้าออกทั้งหมด
                 </button>
             </div>
 
             {/* --- Table (ปรับปรุงคอลัมน์) --- */}
-            {violations.length > 0 ? (
+            {filteredViolations.length > 0 ? (
                 <div className="table-container">
                     <table className="violations-table">
                         <thead>
                             <tr>
                                 <th>ลำดับ</th>    
-                                <th>Status</th>
-                                <th>Vehicle ID</th>
-                                <th>Branch</th>
-                                <th>Branch ID</th>
+                                <th>สถานะ</th>
+                                <th>ID รถ</th>
+                                <th>ชื่อสาขา</th>
+                                <th>รหัสสาขา</th>
                                 <th>Camera Link (IP)</th>
-                                <th>Entry Time</th>
-                                <th>Exit Time</th>
-                                <th>Duration (Mins)</th>
-                                <th>Evidence</th>
+                                <th>เวลาเข้า</th>
+                                <th>เวลาออก</th>
+                                <th>จำนวนเวลา (นาที)</th>
+                                <th>รายละเอียด</th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* ใช้ข้อมูลที่ผ่านการกรองและเรียงลำดับแล้ว */}
-                            {violations.map((violation, index) => (
+                            {filteredViolations.map((violation, index) => (
                                 <tr key={violation.id}>
                                     <td>{(currentPage - 1) * 20 + index + 1}</td>
                                     <td><StatusBadge status={violation.status} /></td>

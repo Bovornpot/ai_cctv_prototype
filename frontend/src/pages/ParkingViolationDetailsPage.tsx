@@ -13,24 +13,12 @@ import KpiCards from '../components/parking/KpiCards';
 import ViolationsChart from '../components/parking/ViolationsChart';
 import TopBranchesList from '../components/parking/TopBranchesList';
 
-// import { 
-//   mockKpiData, 
-//   mockViolationData,
-//   mockTopBranches,
-//   mockSingleDayChartData,
-//   mockRangeDayChartData,
-//   mockSingleWeekChartData, 
-//   mockRangeWeekChartData,
-//   mockSingleMonthChartData,
-//   mockRangeMonthChartData
-// } from '../api/mockParkingData';
-
 interface ParkingViolationDetailsPageProps {
   timeSelection: TimeSelection;
   branchQuery: string;
 }
 
-type ActiveTab = 'all' | 'violations';
+type ActiveTab = 'in-progress' | 'violations' | 'all';
 
 const ParkingViolationDetailsPage: React.FC<ParkingViolationDetailsPageProps> = ({ timeSelection, branchQuery }) => {
   const [summaryData, setSummaryData] = useState<ViolationSummaryResponse | null>(null);

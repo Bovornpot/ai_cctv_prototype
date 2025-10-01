@@ -1,8 +1,12 @@
 # backend/app/main.py
+from dotenv import load_dotenv 
+import os 
+load_dotenv() # เพิ่มบรรทัดนี้ เพื่อโหลดค่าจากไฟล์ .env
+print(f"AWS_ACCESS_KEY_ID: {os.environ.get('AWS_ACCESS_KEY_ID')}")
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.api.routers import parking, table, chilled, analytics
+from app.api.routers import parking, table, chilled, analytics,config_router,ai_control,ai_scheduler
 from app import database
 import logging
 
@@ -40,4 +44,8 @@ async def health_check(): #checking status endpoint
 app.include_router(parking.router)
 app.include_router(table.router)
 app.include_router(chilled.router)
-app.include_router(analytics.router)
+app.include_router(analytics.router, prefix="/api") 
+
+app.include_router(config_router.router, prefix="/api")
+app.include_router(ai_control.router, prefix="/api")
+# app.include_router(ai_scheduler.router, prefix="/api")

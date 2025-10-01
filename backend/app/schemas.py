@@ -15,23 +15,25 @@ class BaseAnalyticsEvents(BaseModel):
 
 class ParkingViolationData(BaseAnalyticsEvents):
     event_type: str
-    # vehicle_id: str = Field(...,examples="ABC-1234")
     car_id: Optional[int] = Field(None, examples=101, description="Unique tracking ID for the vehicle.")
     current_park: int = Field(...,examples=5)
-    # parking_slot_id: str = Field(...,example="P01")
     entry_time: datetime= Field(...,examples="2024-07-01T10:00:00Z")
     exit_time: Optional[datetime]= Field(None,examples="2024-07-01T10:00:00Z")
     duration_minutes: float= Field(...,examples=20.5)
     is_violation: bool= Field(...,examples=True)
     total_parking_sessions: int = Field(..., examples=15, description="Accumulated total parking sessions for this camera since start or last reset.")
-     # field สำหรับรับภาพ Base64 ###
-    # image_base64: Optional[str] = Field(None, description="Base64 encoded snapshot of the violation.")
     image_url: Optional[str] = Field(None, description="URL of the snapshot of the violation.")
+
+class ParkingViolationUpdate(BaseModel):
+    """
+    Schema สำหรับรับข้อมูลเพื่ออัปเดต Violation record ที่มีอยู่แล้ว
+    """
+    exit_time: datetime = Field(..., description="เวลาที่รถขับออกจากที่จอด (UTC)")
+    duration_minutes: float = Field(..., description="ระยะเวลาที่จอดทั้งหมด (นาที)")
 
 class TableOccupancyData(BaseAnalyticsEvents):
     event_type: Literal["table_occupancy"] = "table_occupancy"
     table_id: str = Field(...,examples="T03")
-    # total_table: int = Field(...,examples=5)
     is_occupied: bool =Field(...,examples=True)
     occupancy_start_time: Optional[datetime] =Field(None,examples="2024-07-01T10:00:00Z")
     occupancy_end_time: Optional[datetime]= Field(None,examples="2024-07-01T10:00:00Z")
@@ -57,42 +59,3 @@ class AnalyticsDataIn(BaseModel):
 class InferenceResultResponse(BaseModel):
     message: str = Field(..., examples="Parking violation data received.")
     id: int = Field(..., examples=123)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# #the bounding box coordinates of a detected object.
-# class BoundingBox(BaseModel): 
-#     y_min: int
-#     x_max: int
-#     y_min: int
-#     y_max: int
-#     confidence: Optional[float] = None
-
-# #details of a single person detected by the AI.
-# class PersonDetection(BaseModel): 
-#     person_id: str
-#     bbox: BoundingBox
-#     age: Optional[int] = None
-#     gender: Optional[str] = None
-#     # add more fill form AI Predict
-
-# #the complete AI inference result This is the main data structure that the AI pipeline will send to the Backend.
-# class InferenceResult(BaseModel): 
-#     timestamp: str
-#     camera_id: str
-#     total_people: int
-#     detections: List[PersonDetection]
-#     # may add other metrics form AI 
-#     additional_info: Optional[Dict] = None

@@ -7,8 +7,7 @@ from datetime import date, timedelta, datetime
 from fastapi import Query
 import math
 
-from app import database, schemas
-from app import api_schemas
+from app import database, schemas, api_schemas
 from app.api.deps import get_db
 
 router = APIRouter(prefix="/parking_violations", tags=["Parking Violations"])

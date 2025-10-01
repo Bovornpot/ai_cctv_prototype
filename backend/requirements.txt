@@ -1,6 +1,0 @@
-sqlalchemy
-sqlite3
-typing
-json
-pydantic
-datetime
