@@ -79,7 +79,7 @@ const ViolationsTable: React.FC<ViolationsTableProps> = ({ violations, currentPa
   const [selectedViolation, setSelectedViolation] = useState<ParkingViolationEvent | null>(null);
 
     // ฟิลเตอร์ข้อมูลตาม activeTab
-    let filteredViolations = violations;
+    let filteredViolations = violations.filter(v => (v.status || '').toLowerCase() === 'violate' && !v.exitTime);
 
     if (activeTab === 'in-progress') {
     // แสดงเฉพาะ Violate และยังไม่ออก (exitTime == null)

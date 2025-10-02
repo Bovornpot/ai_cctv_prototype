@@ -43,13 +43,26 @@ video_sources:
     \u0E2D\u0E37\u0E48\u0E19\u0E46\\example.mp4"
   parking_zone_file: parking_zone_camera1.json
   branch_id: '11970'
-  camera_id: D1 F1_11970_BE
+  camera_id: "\u0E08\u0E32\u0E01 Video"
 - name: camera_2
-  branch: kubon
-  source_path: C:\Users\USER\Videos\car\kubon_BE (2).mp4
+  branch: "\u0E1A\u0E34\u0E2A\u0E2A\u0E34\u0E40\u0E19\u0E2A\u0E1E\u0E32\u0E23\u0E4C\
+    \u0E04 3"
+  source_path: rtsp://adminhq:admin1@2@111.197.183.9:554/Streaming/Channels/101
   parking_zone_file: parking_zone_camera2.json
-  branch_id: '11970'
-  camera_id: D1 F2_11970_BE
+  branch_id: '19783'
+  camera_id: "\u0E01\u0E25\u0E49\u0E2D\u0E07 Hikvision"
+- name: camera_3
+  branch: "\u0E2A\u0E35\u0E14\u0E32-\u0E1A\u0E31\u0E27\u0E43\u0E2B\u0E0D\u0E48"
+  source_path: rtsp://adminhq:admin1@2@112.131.146.9:554/cam/realmonitor?channel=1&subtype=0
+  parking_zone_file: parking_zone_camera3.json
+  branch_id: '23146'
+  camera_id: "\u0E01\u0E25\u0E49\u0E2D\u0E07 Dahua"
+- name: camera_4
+  branch: "\u0E0B\u0E2D\u0E22\u0E15\u0E25\u0E32\u0E14\u0E25\u0E48\u0E32\u0E07 18"
+  source_path: rtsp://adminhq:admin1@2@111.140.102.9:554/onvif/profile1/media.smp
+  parking_zone_file: parking_zone_camera4.json
+  branch_id: '14002'
+  camera_id: "\u0E01\u0E25\u0E49\u0E2D\u0E07 Samsung"
 performance_settings:
   target_inference_width: 1280
   frames_to_skip: 1

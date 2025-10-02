@@ -327,7 +327,7 @@ const ROIManager = () => {
                 <div className="bg-white p-6 rounded-lg shadow-md text-center">
                     <p className="text-red-500 font-semibold mb-4">{error}</p>
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/ai-settings')}
                         className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                     >
                         กลับสู่หน้าตั้งค่า
@@ -421,7 +421,7 @@ const ROIManager = () => {
                         </div>
                     )}
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/ai-settings')}
                         className="mt-6 px-4 py-2 w-full bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
                     >
                         กลับสู่หน้าตั้งค่าหลัก

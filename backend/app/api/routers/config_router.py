@@ -5,6 +5,7 @@ import yaml
 from pydantic import BaseModel, Field
 from typing import List, Literal, Dict, Optional
 from pathlib import Path as PPath
+import re
 
 import cv2
 import json
@@ -150,7 +151,11 @@ async def save_config(config: ConfigModel):
 
 
 @router.get("/video-frame/{camera_id}", response_class=Response)
-async def get_video_frame(camera_id: str):
+async def get_video_frame(camera_id: str, skip: int = 30):
+    """
+    ดึงภาพจากวิดีโอ/RTSP ของกล้องตาม camera_id
+    skip = จำนวนเฟรมที่จะข้ามก่อนดึงเฟรมจริง (default = 10)
+    """
     try:
         if not path_to_config_file.exists():
             raise HTTPException(status_code=404, detail="Config file not found.")
@@ -158,34 +163,53 @@ async def get_video_frame(camera_id: str):
         with open(path_to_config_file, "r", encoding='utf-8') as f:
             config = yaml.safe_load(f)
 
-        source_path = None
+        source_path_str = None
         for source in config.get("video_sources", []):
             if source.get("camera_id") == camera_id:
                 _source_path = source.get("source_path")
                 if _source_path:
-                    if not PPath(_source_path).is_absolute():
-                        source_path = path_to_config_file.parent / _source_path
+                    if re.match(r'^(http|https|rtsp)://', _source_path):
+                        source_path_str = _source_path
                     else:
-                        source_path = PPath(_source_path)
+                        resolved_path = PPath(_source_path)
+                        if not resolved_path.is_absolute():
+                            base_project_dir = path_to_config_file.parent.parent
+                            resolved_path = base_project_dir / resolved_path
+                        if not resolved_path.exists():
+                            raise HTTPException(
+                                status_code=404,
+                                detail=f"Video file not found at path: {resolved_path}"
+                            )
+                        source_path_str = str(resolved_path)
                 break
 
-        if not source_path or not source_path.exists():
-            raise HTTPException(status_code=404, detail=f"Video source not found or path is invalid: {source_path}")
+        if not source_path_str:
+            raise HTTPException(status_code=404, detail=f"Video source not found for camera_id: {camera_id}")
 
-        cap = cv2.VideoCapture(str(source_path))
+        cap = cv2.VideoCapture(source_path_str, cv2.CAP_FFMPEG)
         if not cap.isOpened():
-            raise HTTPException(status_code=500, detail="Could not open video file.")
+            raise HTTPException(status_code=500, detail=f"Could not open video source from path/url: {source_path_str}")
 
-        ret, frame = cap.read()
+        # ข้ามเฟรมตามค่า skip
+        frame = None
+        ret = False
+        for _ in range(skip):
+            ret, frame = cap.read()
+            if not ret:
+                continue
+
         cap.release()
 
-        if not ret:
-            raise HTTPException(status_code=500, detail="Could not read video frame.")
+        if not ret or frame is None:
+            raise HTTPException(status_code=500, detail="Could not read video frame after skipping frames.")
 
         _, buffer = cv2.imencode('.jpeg', frame)
         return Response(content=buffer.tobytes(), media_type="image/jpeg")
+
     except Exception as e:
+        logging.error(f"Error in get_video_frame for {camera_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting video frame: {str(e)}")
+
 
 
 @router.get("/roi/polygons/{camera_id}")

@@ -18,6 +18,7 @@ export interface ViolationFilters {
   startDate?: string; // Format: YYYY-MM-DD
   endDate?: string;   // Format: YYYY-MM-DD
   isViolationOnly?: boolean;
+  inProgressOnly?: boolean; //สำหรับ Tabกำลังจอด
   groupByUnit?: ChartGroupByUnit;
 }
 
@@ -70,6 +71,7 @@ export const fetchViolationEvents = async (page: number, limit: number, filters:
   if (filters.startDate) params.append('start_date', filters.startDate);
   if (filters.endDate) params.append('end_date', filters.endDate);
   if (filters.isViolationOnly) params.append('is_violation_only', 'true');
+  if (filters.inProgressOnly) params.append('in_progress_only', 'true'); //สำหรับ Tabกำลังจอด
 
   const queryString = params.toString();
   

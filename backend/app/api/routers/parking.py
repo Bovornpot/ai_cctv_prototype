@@ -259,7 +259,9 @@ def get_violation_events(
     branch_id: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    is_violation_only: bool = False
+    is_violation_only: bool = False,
+    in_progress_only: bool = False
+
 ):
     """
     Endpoint นี้จะดึงข้อมูลเหตุการณ์แบบแบ่งหน้าสำหรับแสดงในตาราง
@@ -267,15 +269,26 @@ def get_violation_events(
     """
     query = db.query(database.DBParkingViolation)
 
+    # เงื่อนไข branch
     if branch_id:
         query = query.filter(database.DBParkingViolation.branch_id.startswith(branch_id))
-    if start_date:
-        query = query.filter(database.DBParkingViolation.timestamp >= start_date)
-    if end_date:
-        from datetime import timedelta
-        query = query.filter(database.DBParkingViolation.timestamp < (end_date + timedelta(days=1)))
-    if is_violation_only:
-        query = query.filter(database.DBParkingViolation.is_violation == True)
+
+    # --- Logic ใหม่สำหรับ in-progress ---
+    if in_progress_only:
+        query = query.filter(
+            database.DBParkingViolation.is_violation == True,
+            database.DBParkingViolation.exit_time.is_(None)
+        )
+        # ❌ ไม่ใส่ start_date/end_date filter เพราะต้องการแสดงทั้งหมด
+    else:
+        # ใช้ filter เดิม
+        if start_date:
+            query = query.filter(database.DBParkingViolation.timestamp >= start_date)
+        if end_date:
+            from datetime import timedelta
+            query = query.filter(database.DBParkingViolation.timestamp < (end_date + timedelta(days=1)))
+        if is_violation_only:
+            query = query.filter(database.DBParkingViolation.is_violation == True)
 
     # นับจำนวนรายการทั้งหมด (ก่อนที่จะแบ่งหน้า)
     total_items = query.count()

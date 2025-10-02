@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { ParkingViolationEvent, ViolationSummaryResponse } from '../types/parkingViolation';
-import { fetchViolationSummary, fetchViolationEvents } from '../api/parkingApiService';
+import { fetchViolationSummary, fetchViolationEvents, ChartGroupByUnit, ViolationFilters } from '../api/parkingApiService';
 import { TimeSelection } from '../types/time';
 import { getDateRangeFromSelection } from '../utils/dateUtils';
-import { ChartGroupByUnit } from '../api/parkingApiService';
 
 // Components
 import ViolationsTable from '../components/parking/ViolationsTable';
@@ -27,7 +26,7 @@ const ParkingViolationDetailsPage: React.FC<ParkingViolationDetailsPageProps> = 
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('violations'); // Default เป็น violations
+  const [activeTab, setActiveTab] = useState<'in-progress' | 'violations' | 'all'>('in-progress'); // Default เป็น violations
 
   useEffect(() => {
     // ฟังก์ชันสำหรับดึงข้อมูล โดยใช้ค่า filter ล่าสุด
@@ -55,26 +54,47 @@ const ParkingViolationDetailsPage: React.FC<ParkingViolationDetailsPageProps> = 
           groupByUnit = 'month';
         }
 
-        const filters = {
-          branchId: branchQuery || undefined,
-          startDate: toYYYYMMDD(startDate),
-          endDate: toYYYYMMDD(endDate),
-          isViolationOnly: activeTab === 'violations',
-          groupByUnit: groupByUnit,
-        };
+        // ---------------------------
+      // summaryFilters => ใช้สำหรับ summary/chart (ยังคงถูกจำกัดด้วยวันที่ตาม timeSelection)
+      // ---------------------------
+      const summaryFilters: ViolationFilters = {
+        branchId: branchQuery || undefined,
+        startDate: toYYYYMMDD(startDate),
+        endDate: toYYYYMMDD(endDate),
+        groupByUnit,
+      };
 
-        console.log("Sending filters to backend:", filters);
+      // ---------------------------
+      // eventsFilters => ใช้สำหรับตาราง (ปรับตาม activeTab)
+      // - in-progress: ไม่ใส่ start/end date, ใส่ inProgressOnly = true
+      // - violations: ใส่ start/end date และ isViolationOnly = true
+      // - all: ใส่ start/end date (ไม่ใส่ isViolationOnly)
+      // ---------------------------
+      const eventsFilters: ViolationFilters = {
+        branchId: branchQuery || undefined,
+        groupByUnit,
+      };
 
-        // ข้อมูล summary จะดึงเหมือนเดิม ไม่เกี่ยวกับ Tab
-        const summaryPromise = fetchViolationSummary({ branchId: filters.branchId, startDate: filters.startDate, endDate: filters.endDate });
-        // แต่ข้อมูล events จะดึงตาม Tab
-        const eventsPromise = fetchViolationEvents(currentPage, 20, filters);
-        // เรียก API ทั้งสองตัวพร้อมกันโดยส่ง Filters ไปด้วย
+      if (activeTab === 'in-progress') {
+        eventsFilters.isViolationOnly = true;    // เราต้องการเฉพาะ violation
+        eventsFilters.inProgressOnly = true;     // แต่ขอเฉพาะที่ยังไม่ออก (exitTime == null)
+        // intentionally DO NOT set startDate/endDate -> show all
+      } else if (activeTab === 'violations') {
+        eventsFilters.isViolationOnly = true;
+        eventsFilters.startDate = toYYYYMMDD(startDate);
+        eventsFilters.endDate = toYYYYMMDD(endDate);
+      } else { // 'all'
+        eventsFilters.startDate = toYYYYMMDD(startDate);
+        eventsFilters.endDate = toYYYYMMDD(endDate);
+      }
 
-        const [summary, paginatedEvents] = await Promise.all([
-          fetchViolationSummary(filters),
-          fetchViolationEvents(currentPage, 20, filters),
-        ]);
+      console.log("Summary filters to backend:", summaryFilters);
+      console.log("Events filters to backend:", eventsFilters);
+
+      const [summary, paginatedEvents] = await Promise.all([
+        fetchViolationSummary(summaryFilters),
+        fetchViolationEvents(currentPage, 20, eventsFilters),
+      ]);
         
         setSummaryData(summary);
         // อัปเดต events และ totalPages
